@@ -1,11 +1,14 @@
 ## 2.0.0
+ * STORM-2272: don't leak simulated time
+ * STORM-2275: Nimbus crashed during state transition of topology
+ * STORM-2243: adds ip address to supervisor id
+ * STORM-2214: add in cacheing of the Kerberos Login
  * STORM-2203: Add a getAll method to KeyValueState interface
  * STORM-1239: port backtype.storm.scheduler.IsolationScheduler to java
  * STORM-2217: Finish porting drpc to java
  * STORM-1308: port backtype.storm.tick-tuple-test to java
  * STORM-2245: integration-test constant compilation failure
  * STORM-1607: Add MongoMapState for supporting trident's exactly once semantics
- * STORM-2204: Adding caching capabilities in HBaseLookupBolt
  * STORM-2104: More graceful handling of acked/failed tuples after partition reassignment
  * STORM-1281: LocalCluster, testing4j and testing.clj to java
  * STORM-2226: Fix kafka spout offset lag ui for kerberized kafka
@@ -188,6 +191,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2204: Adding caching capabilities in HBaseLookupBolt
  * STORM-2267: Use user's local maven repo. directory to local repo.
  * STORM-2254: Provide Socket time out for nimbus thrift client
  * STORM-2200: [Storm SQL] Drop Aggregate & Join support on Trident mode
@@ -274,6 +278,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2276: Remove twitter4j usages due to license issue (JSON.org is catalog X)
  * STORM-2095: remove any remaining files when deleting blobstore directory
  * STORM-2251: Integration test refers specific version of Storm which should be project version
  * STORM-2234: heartBeatExecutorService in shellSpout don't work well with deactivate
