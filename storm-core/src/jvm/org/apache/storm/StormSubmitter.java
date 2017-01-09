@@ -32,6 +32,7 @@ import java.util.Set;
 import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.dependency.DependencyPropertiesParser;
 import org.apache.storm.dependency.DependencyUploader;
+import org.apache.storm.graph.TopologyGraphBuilder;
 import org.apache.storm.hooks.SubmitterHookException;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.validation.ConfigValidation;
@@ -404,6 +405,10 @@ public class StormSubmitter {
      */
 
     public static void submitTopologyWithProgressBar(String name, Map stormConf, StormTopology topology) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+
+        //build graph structure from topology
+        TopologyGraphBuilder.buildGraph(topology);
+
         submitTopologyWithProgressBar(name, stormConf, topology, null);
     }
 

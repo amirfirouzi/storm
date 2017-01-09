@@ -79,8 +79,8 @@ public class ExclamationTopology {
     else {
 
       try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
-        Utils.sleep(10000);
+           LocalTopology topo = cluster.submitTopology("exclamation-topology", conf, builder.createTopology());) {
+        Utils.sleep(100000);
       }
     }
   }

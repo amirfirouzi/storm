@@ -54,6 +54,7 @@ import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.graph.TopologyGraphBuilder;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
 import org.apache.storm.nimbus.ILeaderElector;
@@ -507,6 +508,10 @@ public class LocalCluster implements ILocalCluster {
         if (!Utils.isValidConf(conf)) {
             throw new IllegalArgumentException("Topology conf is not json-serializable");
         }
+
+        //build graph structure from topology
+        TopologyGraphBuilder.buildGraph(topology);
+
         getNimbus().submitTopology(topologyName, null, JSONValue.toJSONString(conf), topology);
         
         ISubmitterHook hook = (ISubmitterHook) Utils.getConfiguredClass(conf, Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN);
