@@ -80,7 +80,7 @@ public class ExclamationTopology {
 
       try (LocalCluster cluster = new LocalCluster();
            LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
-        Utils.sleep(10000);
+        Utils.sleep(1000000);
       }
     }
   }
