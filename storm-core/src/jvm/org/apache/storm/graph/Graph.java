@@ -235,6 +235,17 @@ public class Graph {
         line.append(getNeighboursOf(vertex, neighbours, fmtEdgeWeight, ncon) + "\n")
             .append("%" + getNeighbourNamesOf(vertex, neighbours, fmtEdgeWeight) + "\n");
       }
+
+      line.append("\n%------names------\n");
+      for (Map.Entry<Vertex, TreeSet<Vertex>> row
+          : adjList.entrySet()) {
+        line.append("%")
+            .append(row.getKey().getId())
+            .append("->")
+            .append(row.getKey().getName())
+            .append("\n");
+      }
+
       out.write(line.toString());
       out.close();
     } catch (IOException e) {
