@@ -98,7 +98,7 @@ public class WordCountTopology {
 
       try (LocalCluster cluster = new LocalCluster();
            LocalTopology topo = cluster.submitTopology("word-count", conf, builder.createTopology());) {
-        Thread.sleep(10000);
+        Thread.sleep(100000);
       }
     }
   }

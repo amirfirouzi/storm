@@ -6,39 +6,38 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.storm.graph;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.TreeSet;
 
 public class Graph {
   private static final TreeSet<Vertex> EMPTY_SET = new TreeSet<Vertex>();
   private LinkedHashMap<Vertex, TreeSet<Vertex>> adjList;
   private LinkedHashMap<String, Vertex> vertices;
-  private LinkedHashMap<String, Edge> myEdges;
+  private LinkedHashMap<String, Edge> edges;
   private int numOfVertices;
   private int numOfEdges;
 
   public Graph() {
     adjList = new LinkedHashMap<Vertex, TreeSet<Vertex>>();
     vertices = new LinkedHashMap<String, Vertex>();
-    myEdges = new LinkedHashMap<String, Edge>();
+    edges = new LinkedHashMap<String, Edge>();
     numOfVertices = numOfEdges = 0;
 
+  }
+
+  public LinkedHashMap<Vertex, TreeSet<Vertex>> getAdjList() {
+    return adjList;
   }
 
   /**
@@ -103,7 +102,7 @@ public class Graph {
 
   public Edge getEdge(String from, String to) {
     String edgeName = from + ">" + to;
-    return myEdges.get(edgeName);
+    return edges.get(edgeName);
   }
 
   /**
@@ -122,7 +121,7 @@ public class Graph {
       return edge;
     }
     edge = new Edge(from, to);
-    myEdges.put(edge.getName(), edge);
+    edges.put(edge.getName(), edge);
     numOfEdges += 1;
 
     src = getVertex(from);
@@ -189,54 +188,6 @@ public class Graph {
     return str;
   }
 
-  /**
-   * Writes the input data required for METIS and Returns the data as a String
-   */
-  public String writeMetis(String fileName, boolean fmtVertexSize,
-                           boolean fmtVertexWeight, boolean fmtEdgeWeight, int ncon) {
-    String fmt = Integer.toString(fmtVertexSize ? 1 : 0)
-        + Integer.toString(fmtVertexWeight ? 1 : 0)
-        + Integer.toString(fmtEdgeWeight ? 1 : 0);
-
-
-    String file = "output/" + fileName;
-    StringBuilder line = new StringBuilder();
-
-    try {
-      FileWriter out = new FileWriter(file);
-
-      //write header info (#v #e fmt ncon)
-      line.append("%------header------\n")
-          .append(this.numVertices() + " ")
-          .append(this.numEdges() + " ")
-          .append(fmt + " ")
-          .append(ncon)
-          .append("\n");
-      for (Map.Entry<Vertex, TreeSet<Vertex>> row
-          : adjList.entrySet()) {
-        Vertex vertex = row.getKey();
-        TreeSet<Vertex> neighbours = row.getValue();
-        //write a comment to show the current(i'th) vertex name and it's weights
-        //%--------#VName(#weights)--------
-        line.append("%")
-            .append("--------")
-            .append(vertex.getName())
-            .append(vertex.getWeightsString(ncon))
-            .append("--------" + "\n");
-        //write each line: the weights of current vertex and neighbours + edge weights(if exist)
-        //#weights #neighbour1 #edgeWeight #neighbour2 #edgeWeight ...
-        line.append(getNeighboursOf(vertex, neighbours, fmtEdgeWeight, ncon) + "\n")
-            .append("%" + getNeighbourNamesOf(vertex, neighbours, fmtEdgeWeight) + "\n");
-      }
-      out.write(line.toString());
-      out.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-    return line.toString();
-  }
-
   public String getNeighboursOf(Vertex currentVertex, TreeSet<Vertex> neighbours,
                                 boolean fmtEdgeWeight, int ncon) {
     StringBuilder line = new StringBuilder();
@@ -278,43 +229,6 @@ public class Graph {
 
   private String escapedVersion(String s) {
     return "\'" + s + "\'";
-
-  }
-
-  public void outputGDF(String fileName) {
-    HashMap<Vertex, String> idToName = new HashMap<Vertex, String>();
-    String file = "output/" + fileName;
-
-    try {
-      FileWriter out = new FileWriter(file);
-      int count = 0;
-      out.write("nodedef> name,label,style,distance INTEGER\n");
-      // write vertices
-      for (Vertex v : vertices.values()) {
-        String id = "v" + count++;
-        idToName.put(v, id);
-        out.write(id + "," + escapedVersion(v.getName()));
-        out.write(",6," + v.distance + "\n");
-      }
-      out.write("edgedef> node1,node2,color\n");
-      // write edges
-      for (Vertex v : vertices.values()) {
-        for (Vertex w : adjList.get(v)) {
-          if (v.compareTo(w) < 0) {
-            out.write(idToName.get(v) + "," + idToName.get(w) + ",");
-            if (v.predecessor == w || w.predecessor == v) {
-              out.write("blue");
-            } else {
-              out.write("gray");
-            }
-            out.write("\n");
-          }
-        }
-      }
-      out.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
 
   }
 }

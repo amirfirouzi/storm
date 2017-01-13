@@ -64,9 +64,9 @@ public class ExclamationTopology {
   public static void main(String[] args) throws Exception {
     TopologyBuilder builder = new TopologyBuilder();
 
-    builder.setSpout("word", new TestWordSpout(), 10);
-    builder.setBolt("exclaim1", new ExclamationBolt(), 3).shuffleGrouping("word");
-    builder.setBolt("exclaim2", new ExclamationBolt(), 2).shuffleGrouping("exclaim1");
+    builder.setSpout("a", new TestWordSpout(), 2);
+    builder.setBolt("b", new ExclamationBolt(), 2).shuffleGrouping("a");
+    builder.setBolt("c", new ExclamationBolt(), 1).shuffleGrouping("b");
 
     Config conf = new Config();
     conf.setDebug(true);
@@ -79,8 +79,8 @@ public class ExclamationTopology {
     else {
 
       try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
-        Utils.sleep(1000000);
+           LocalTopology topo = cluster.submitTopology("exclamation-topology", conf, builder.createTopology());) {
+        Utils.sleep(100000);
       }
     }
   }
