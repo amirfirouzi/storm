@@ -36,180 +36,201 @@ import java.util.*;
  */
 public final class TopologyGraphBuilder {
 
-    private static Map<String, Integer> parallelismMap = new HashMap<>();
+  private static Map<String, Integer> parallelismMap = new HashMap<>();
 
-    private TopologyGraphBuilder() {
-        //not called
+  private TopologyGraphBuilder() {
+    //not called
+  }
+
+  public static void buildGraph(StormTopology topology) {
+    calculateParallelismMap(topology);
+    Graph g = new Graph();
+    //Add Vertices for Spouts
+    int spoutParallelism;
+    for (Map.Entry<String, SpoutSpec> spout
+        : topology.get_spouts().entrySet()) {
+      spoutParallelism = spout.getValue().get_common().get_parallelism_hint();
+      for (int i = 1; i <= spoutParallelism; i++) {
+        g.addVertex(spout.getKey() + "-" + Integer.toString(i));
+      }
     }
 
-    public static void buildGraph(StormTopology topology) {
-        calculateParallelismMap(topology);
-        Graph g = new Graph();
-        //Add Vertices for Spouts
-        int spoutParallelism;
-        for (Map.Entry<String, SpoutSpec> spout
-                : topology.get_spouts().entrySet()) {
-            spoutParallelism = spout.getValue().get_common().get_parallelism_hint();
-            for (int i = 1; i <= spoutParallelism; i++) {
-                g.addVertex(spout.getKey() + "-" + Integer.toString(i));
-            }
+    int boltParallelism;
+    //Add Vertices for Bolts, then Add Edges Between Components(spouts->bolts and bolts->bolts)
+    //and their sub-tasks(considering number of instances)
+    for (Map.Entry<String, Bolt> bolt
+        : topology.get_bolts().entrySet()) {
+      boltParallelism = bolt.getValue().get_common().get_parallelism_hint();
+      for (int i = 1; i <= boltParallelism; i++) {
+        g.addVertex(bolt.getKey() + "-" + Integer.toString(i));
+        for (GlobalStreamId input
+            : bolt.getValue().get_common().get_inputs().keySet()) {
+
+          int sourceParallelism = getComponentParallelism(input.get_componentId());
+          for (int j = 1; j <= sourceParallelism; j++) {
+            g.addEdge(input.get_componentId()
+                + "-" + Integer.toString(j), bolt.getKey()
+                + "-" + Integer.toString(i));
+          }
         }
-
-        int boltParallelism;
-        //Add Vertices for Bolts, then Add Edges Between Components(spouts->bolts and bolts->bolts)
-        //and their sub-tasks(considering number of instances)
-        for (Map.Entry<String, Bolt> bolt
-                : topology.get_bolts().entrySet()) {
-            boltParallelism = bolt.getValue().get_common().get_parallelism_hint();
-            for (int i = 1; i <= boltParallelism; i++) {
-                g.addVertex(bolt.getKey() + "-" + Integer.toString(i));
-                for (GlobalStreamId input
-                        : bolt.getValue().get_common().get_inputs().keySet()) {
-
-                    int sourceParallelism = getComponentParallelism(input.get_componentId());
-                    for (int j = 1; j <= sourceParallelism; j++) {
-                        g.addEdge(input.get_componentId()
-                                + "-" + Integer.toString(j), bolt.getKey()
-                                + "-" + Integer.toString(i));
-                    }
-                }
-            }
-        }
-
-        generateMetisInputFile(g, "metis", false, false, false, 0);
-        int numOfPartitions = 2;
-        getMetisPartitions(g, "metis", numOfPartitions);
+      }
     }
 
-    private static void calculateParallelismMap(StormTopology topology) {
-        for (Map.Entry<String, SpoutSpec> spout
-                : topology.get_spouts().entrySet()) {
-            parallelismMap.put(spout.getKey(), spout.getValue().get_common().get_parallelism_hint());
-        }
+    generateMetisInputFile(g, "metis", false, false, false, 0);
+    int numOfPartitions = 3;
+    getMetisPartitions(g, "metis", numOfPartitions);
+  }
 
-        for (Map.Entry<String, Bolt> bolt
-                : topology.get_bolts().entrySet()) {
-            parallelismMap.put(bolt.getKey(), bolt.getValue().get_common().get_parallelism_hint());
-        }
+  private static void calculateParallelismMap(StormTopology topology) {
+    for (Map.Entry<String, SpoutSpec> spout
+        : topology.get_spouts().entrySet()) {
+      parallelismMap.put(spout.getKey(), spout.getValue().get_common().get_parallelism_hint());
     }
 
-    private static int getComponentParallelism(String componentName) {
-        return parallelismMap.getOrDefault(componentName, 0);
+    for (Map.Entry<String, Bolt> bolt
+        : topology.get_bolts().entrySet()) {
+      parallelismMap.put(bolt.getKey(), bolt.getValue().get_common().get_parallelism_hint());
+    }
+  }
+
+  private static int getComponentParallelism(String componentName) {
+    return parallelismMap.getOrDefault(componentName, 0);
+  }
+
+  /**
+   * Writes the input data required for METIS and Returns the data as a String
+   */
+  public static String generateMetisInputFile(Graph graph, String fileName, boolean fmtVertexSize,
+                                              boolean fmtVertexWeight, boolean fmtEdgeWeight, int ncon) {
+    String fmt = Integer.toString(fmtVertexSize ? 1 : 0)
+        + Integer.toString(fmtVertexWeight ? 1 : 0)
+        + Integer.toString(fmtEdgeWeight ? 1 : 0);
+
+    String stormHome = System.getProperty("user.home") + "/.stormdata";
+    String dir = stormHome + "/output/";
+    String file = dir + fileName;
+
+    File directory = new File(dir);
+    if (!directory.exists()) {
+      directory.mkdirs();
     }
 
-    /**
-     * Writes the input data required for METIS and Returns the data as a String
-     */
-    public static String generateMetisInputFile(Graph graph, String fileName, boolean fmtVertexSize,
-                                                boolean fmtVertexWeight, boolean fmtEdgeWeight, int ncon) {
-        String fmt = Integer.toString(fmtVertexSize ? 1 : 0)
-                + Integer.toString(fmtVertexWeight ? 1 : 0)
-                + Integer.toString(fmtEdgeWeight ? 1 : 0);
+    StringBuilder line = new StringBuilder();
+    try {
 
-        String stormHome = System.getProperty("user.home") + "/.stormdata";
-        String dir = stormHome + "/output/";
-        String file = dir + fileName;
+      FileWriter out = new FileWriter(file);
+      Set<Map.Entry<Vertex, TreeSet<Vertex>>> adjListEntries = graph.getAdjList().entrySet();
 
-        File directory = new File(dir);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
+      //write header info (#v #e fmt ncon)
+      line.append("%------header------\n")
+          .append(graph.numVertices() + " ")
+          .append(graph.numEdges() + " ")
+          .append(fmt + " ")
+          .append(ncon)
+          .append("\n");
+      for (Map.Entry<Vertex, TreeSet<Vertex>> adjListRow
+          : adjListEntries) {
+        Vertex vertex = adjListRow.getKey();
+        TreeSet<Vertex> neighbours = adjListRow.getValue();
+        //write a comment to show the current(i'th) vertex name and it's weights
+        //%--------#VName(#weights)--------
+        line.append("%")
+            .append("--------")
+            .append(vertex.getName())
+            .append(vertex.getWeightsString(ncon))
+            .append("--------" + "\n");
+        //write each line: the weights of current vertex and neighbours + edge weights(if exist)
+        //#weights #neighbour1 #edgeWeight #neighbour2 #edgeWeight ...
+        line.append(graph.getNeighboursOf(vertex, neighbours, fmtEdgeWeight, ncon) + "\n")
+            .append("%" + graph.getNeighbourNamesOf(vertex, neighbours, fmtEdgeWeight) + "\n");
+      }
 
-        StringBuilder line = new StringBuilder();
-        try {
+      line.append("\n%------names------\n");
+      for (Map.Entry<Vertex, TreeSet<Vertex>> row
+          : adjListEntries) {
+        line.append("%")
+            .append(row.getKey().getId())
+            .append("->")
+            .append(row.getKey().getName())
+            .append("\n");
+      }
 
-            FileWriter out = new FileWriter(file);
-            Set<Map.Entry<Vertex, TreeSet<Vertex>>> adjListEntries = graph.getAdjList().entrySet();
-
-            //write header info (#v #e fmt ncon)
-            line.append("%------header------\n")
-                    .append(graph.numVertices() + " ")
-                    .append(graph.numEdges() + " ")
-                    .append(fmt + " ")
-                    .append(ncon)
-                    .append("\n");
-            for (Map.Entry<Vertex, TreeSet<Vertex>> adjListRow
-                    : adjListEntries) {
-                Vertex vertex = adjListRow.getKey();
-                TreeSet<Vertex> neighbours = adjListRow.getValue();
-                //write a comment to show the current(i'th) vertex name and it's weights
-                //%--------#VName(#weights)--------
-                line.append("%")
-                        .append("--------")
-                        .append(vertex.getName())
-                        .append(vertex.getWeightsString(ncon))
-                        .append("--------" + "\n");
-                //write each line: the weights of current vertex and neighbours + edge weights(if exist)
-                //#weights #neighbour1 #edgeWeight #neighbour2 #edgeWeight ...
-                line.append(graph.getNeighboursOf(vertex, neighbours, fmtEdgeWeight, ncon) + "\n")
-                        .append("%" + graph.getNeighbourNamesOf(vertex, neighbours, fmtEdgeWeight) + "\n");
-            }
-
-            line.append("\n%------names------\n");
-            for (Map.Entry<Vertex, TreeSet<Vertex>> row
-                    : adjListEntries) {
-                line.append("%")
-                        .append(row.getKey().getId())
-                        .append("->")
-                        .append(row.getKey().getName())
-                        .append("\n");
-            }
-
-            out.write(line.toString());
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return line.toString();
+      out.write(line.toString());
+      out.close();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
-    private static boolean callMetis(int numOfPartitions) {
-        //ToDo: read output and check for errors
-        try {
-            Process p = Runtime.getRuntime().exec(new String[]{"bash", "-c", "gpmetis " + numOfPartitions});
-            return (p.exitValue() == 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
+    return line.toString();
+  }
+
+  public static String getMetisPartitions(Graph graph, String fileName, int numOfPartitions) {
+    //ToDo: check the output and stops execution if errors occured
+    String stormHome = System.getProperty("user.home") + "/.stormdata";
+    String dir = stormHome + "/output/";
+    String metisInputFile = dir + fileName;
+    String metisOutputFile = dir + fileName + ".part." + numOfPartitions;
+
+    List<Integer> metisOutput = new ArrayList<>();
+    //String metisOutput = "";
+    try {
+      callMetis(numOfPartitions, metisInputFile);
+      metisOutput = readFileList(metisOutputFile, Charset.defaultCharset());
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
-    public static String getMetisPartitions(Graph graph, String fileName, int numOfPartitions){
-        //ToDo: check the output and stops execution if errors occured
-        String stormHome = System.getProperty("user.home") + "/.stormdata";
-        String dir = stormHome + "/output/";
-        String file = dir + fileName + ".part." + numOfPartitions;
+    List<Integer> items = new ArrayList<Integer>();
+    HashMap<Integer, List<Vertex>> partitions = new HashMap<>();
+    //need newPartitions because items in metisOutput list may be non contiguous
+    int newPartitions = 0;
 
-        List<Integer> metisOutput = new ArrayList<>();
-        //String metisOutput = "";
-        try {
-            //metisOutput = readFile(file, Charset.defaultCharset());
-            metisOutput = readFileList(file, Charset.defaultCharset());
-            Integer min = Collections.min(metisOutput);
-            Integer max = Collections.max(metisOutput);
-            System.out.println();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return file;
+    for (int i = 0; i < metisOutput.size(); i++) {
+      if (!items.contains(metisOutput.get(i))) {
+        int index = ++newPartitions;
+        items.add(metisOutput.get(i));
+        List<Vertex> partitionVertices = new ArrayList<>();
+        partitionVertices.add(graph.getVertex(i + 1));
+        partitions.put(index, partitionVertices);
+      } else {
+        int index = items.indexOf(metisOutput.get(i)) + 1;
+        partitions.get(index).add(graph.getVertex(i + 1));
+      }
     }
+    return metisOutputFile;
+  }
 
-    private static String readFileString(String path, Charset encoding)
-            throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
-    }
 
-    private static List<Integer> readFileList(String path, Charset encoding)
-            throws IOException {
-        List<Integer> numbers = new ArrayList<>();
-        for (String line : Files.readAllLines(Paths.get(path))) {
-            for (String part : line.split("\\s+")) {
-                Integer i = Integer.valueOf(part);
-                numbers.add(i);
-            }
-        }
-        return numbers;
+  private static boolean callMetis(int numOfPartitions, String fileName) {
+    //ToDo: read output and check for errors
+    try {
+      Process p = Runtime.getRuntime().exec(new String[]{"bash", "-c", "gpmetis " + fileName + " " + numOfPartitions});
+      int retValue = p.waitFor();
+      return (retValue == 0);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      return false;
     }
+  }
+
+  private static String readFileString(String path, Charset encoding)
+      throws IOException {
+    byte[] encoded = Files.readAllBytes(Paths.get(path));
+    return new String(encoded, encoding);
+  }
+
+  private static List<Integer> readFileList(String path, Charset encoding)
+      throws IOException {
+    List<Integer> numbers = new ArrayList<>();
+    for (String line : Files.readAllLines(Paths.get(path))) {
+      for (String part : line.split("\\s+")) {
+        Integer i = Integer.valueOf(part);
+        numbers.add(i);
+      }
+    }
+    return numbers;
+  }
 }

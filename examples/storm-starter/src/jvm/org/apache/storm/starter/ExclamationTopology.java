@@ -64,9 +64,9 @@ public class ExclamationTopology {
   public static void main(String[] args) throws Exception {
     TopologyBuilder builder = new TopologyBuilder();
 
-    builder.setSpout("a", new TestWordSpout(), 2);
+    builder.setSpout("a", new TestWordSpout(), 5);
     builder.setBolt("b", new ExclamationBolt(), 2).shuffleGrouping("a");
-    builder.setBolt("c", new ExclamationBolt(), 1).shuffleGrouping("b");
+    builder.setBolt("c", new ExclamationBolt(), 3).shuffleGrouping("b");
 
     Config conf = new Config();
     conf.setDebug(true);

@@ -17,6 +17,7 @@
  */
 package org.apache.storm.graph;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.TreeSet;
 
@@ -24,6 +25,7 @@ public class Graph {
   private static final TreeSet<Vertex> EMPTY_SET = new TreeSet<Vertex>();
   private LinkedHashMap<Vertex, TreeSet<Vertex>> adjList;
   private LinkedHashMap<String, Vertex> vertices;
+  private LinkedHashMap<Integer, String> verticesIds;
   private LinkedHashMap<String, Edge> edges;
   private int numOfVertices;
   private int numOfEdges;
@@ -31,6 +33,7 @@ public class Graph {
   public Graph() {
     adjList = new LinkedHashMap<Vertex, TreeSet<Vertex>>();
     vertices = new LinkedHashMap<String, Vertex>();
+    verticesIds = new LinkedHashMap<Integer, String>();
     edges = new LinkedHashMap<String, Edge>();
     numOfVertices = numOfEdges = 0;
 
@@ -53,6 +56,7 @@ public class Graph {
       numOfVertices += 1;
       v.setId(numOfVertices);
       vertices.put(name, v);
+      verticesIds.put(numOfVertices, name);
       adjList.put(v, new TreeSet<Vertex>());
 
     }
@@ -71,6 +75,7 @@ public class Graph {
     return vertices.get(name);
   }
 
+  public Vertex getVertex(Integer index) {return vertices.get(verticesIds.get(index));}
   /**
    * Returns true iff v is in this Graph, false otherwise
    *
@@ -160,6 +165,10 @@ public class Graph {
    */
   public Iterable<Vertex> getVertices() {
     return vertices.values();
+  }
+
+  public LinkedHashMap<Integer, String> getVerticesIds() {
+    return verticesIds;
   }
 
   public int numVertices() {
