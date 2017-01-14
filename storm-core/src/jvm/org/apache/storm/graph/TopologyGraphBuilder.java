@@ -26,10 +26,10 @@ import org.apache.storm.generated.StormTopology;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 /**
  * Created by amir on 11/21/16.
@@ -77,6 +77,8 @@ public final class TopologyGraphBuilder {
         }
 
         generateMetisInputFile(g, "metis", false, false, false, 0);
+        int numOfPartitions = 2;
+        getMetisPartitions(g, "metis", numOfPartitions);
     }
 
     private static void calculateParallelismMap(StormTopology topology) {
@@ -160,5 +162,54 @@ public final class TopologyGraphBuilder {
         }
 
         return line.toString();
+    }
+
+    private static boolean callMetis(int numOfPartitions) {
+        //ToDo: read output and check for errors
+        try {
+            Process p = Runtime.getRuntime().exec(new String[]{"bash", "-c", "gpmetis " + numOfPartitions});
+            return (p.exitValue() == 0);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static String getMetisPartitions(Graph graph, String fileName, int numOfPartitions){
+        //ToDo: check the output and stops execution if errors occured
+        String stormHome = System.getProperty("user.home") + "/.stormdata";
+        String dir = stormHome + "/output/";
+        String file = dir + fileName + ".part." + numOfPartitions;
+
+        List<Integer> metisOutput = new ArrayList<>();
+        //String metisOutput = "";
+        try {
+            //metisOutput = readFile(file, Charset.defaultCharset());
+            metisOutput = readFileList(file, Charset.defaultCharset());
+            Integer min = Collections.min(metisOutput);
+            Integer max = Collections.max(metisOutput);
+            System.out.println();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return file;
+    }
+
+    private static String readFileString(String path, Charset encoding)
+            throws IOException {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, encoding);
+    }
+
+    private static List<Integer> readFileList(String path, Charset encoding)
+            throws IOException {
+        List<Integer> numbers = new ArrayList<>();
+        for (String line : Files.readAllLines(Paths.get(path))) {
+            for (String part : line.split("\\s+")) {
+                Integer i = Integer.valueOf(part);
+                numbers.add(i);
+            }
+        }
+        return numbers;
     }
 }
