@@ -17,18 +17,6 @@
  */
 package org.apache.storm;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.UnaryOperator;
-
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
@@ -44,17 +32,8 @@ import org.apache.storm.daemon.supervisor.ReadClusterState;
 import org.apache.storm.daemon.supervisor.StandaloneSupervisor;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.executor.LocalExecutor;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.ClusterSummary;
-import org.apache.storm.generated.Credentials;
-import org.apache.storm.generated.KillOptions;
+import org.apache.storm.generated.*;
 import org.apache.storm.generated.Nimbus.Processor;
-import org.apache.storm.generated.NimbusSummary;
-import org.apache.storm.generated.RebalanceOptions;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.generated.SubmitOptions;
-import org.apache.storm.generated.TopologyInfo;
-import org.apache.storm.graph.TopologyGraphBuilder;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
 import org.apache.storm.nimbus.ILeaderElector;
@@ -68,16 +47,18 @@ import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.testing.NonRichBoltTracker;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.testing.TrackedTopology;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.RegisteredGlobalState;
-import org.apache.storm.utils.StormCommonInstaller;
-import org.apache.storm.utils.Time;
+import org.apache.storm.utils.*;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.apache.storm.utils.Utils;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.UnaryOperator;
 
 /**
  * A stand alone storm cluster that runs inside a single process.
@@ -510,7 +491,7 @@ public class LocalCluster implements ILocalCluster {
         }
 
         //build graph structure from topology
-        TopologyGraphBuilder.buildGraph(topology);
+//        TopologyGraphBuilder.buildGraph(topology);
 
         getNimbus().submitTopology(topologyName, null, JSONValue.toJSONString(conf), topology);
         

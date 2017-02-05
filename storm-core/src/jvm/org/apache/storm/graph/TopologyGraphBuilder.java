@@ -22,6 +22,7 @@ import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.scheduler.TopologyDetails;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -42,13 +43,13 @@ public final class TopologyGraphBuilder {
     //not called
   }
 
-  public static void buildGraph(StormTopology topology) {
-    calculateParallelismMap(topology);
+  public static void buildGraph(TopologyDetails td) {
+    calculateParallelismMap(td);
     Graph g = new Graph();
     //Add Vertices for Spouts
     int spoutParallelism;
     for (Map.Entry<String, SpoutSpec> spout
-        : topology.get_spouts().entrySet()) {
+        : td.getTopology().get_spouts().entrySet()) {
       spoutParallelism = spout.getValue().get_common().get_parallelism_hint();
       for (int i = 1; i <= spoutParallelism; i++) {
         g.addVertex(spout.getKey() + "-" + Integer.toString(i));
@@ -59,7 +60,7 @@ public final class TopologyGraphBuilder {
     //Add Vertices for Bolts, then Add Edges Between Components(spouts->bolts and bolts->bolts)
     //and their sub-tasks(considering number of instances)
     for (Map.Entry<String, Bolt> bolt
-        : topology.get_bolts().entrySet()) {
+        : td.getTopology().get_bolts().entrySet()) {
       boltParallelism = bolt.getValue().get_common().get_parallelism_hint();
       for (int i = 1; i <= boltParallelism; i++) {
         g.addVertex(bolt.getKey() + "-" + Integer.toString(i));
@@ -81,14 +82,14 @@ public final class TopologyGraphBuilder {
     getMetisPartitions(g, "metis", numOfPartitions);
   }
 
-  private static void calculateParallelismMap(StormTopology topology) {
+  private static void calculateParallelismMap(TopologyDetails td) {
     for (Map.Entry<String, SpoutSpec> spout
-        : topology.get_spouts().entrySet()) {
+        : td.getTopology().get_spouts().entrySet()) {
       parallelismMap.put(spout.getKey(), spout.getValue().get_common().get_parallelism_hint());
     }
 
     for (Map.Entry<String, Bolt> bolt
-        : topology.get_bolts().entrySet()) {
+        : td.getTopology().get_bolts().entrySet()) {
       parallelismMap.put(bolt.getKey(), bolt.getValue().get_common().get_parallelism_hint());
     }
   }

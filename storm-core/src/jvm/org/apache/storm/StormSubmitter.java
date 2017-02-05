@@ -18,36 +18,29 @@
 package org.apache.storm;
 
 import com.google.common.collect.Sets;
-
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.dependency.DependencyPropertiesParser;
 import org.apache.storm.dependency.DependencyUploader;
-import org.apache.storm.graph.TopologyGraphBuilder;
+import org.apache.storm.generated.*;
 import org.apache.storm.hooks.SubmitterHookException;
 import org.apache.storm.scheduler.resource.ResourceUtils;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IAutoCredentials;
+import org.apache.storm.utils.BufferFileInputStream;
+import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
-import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.storm.security.auth.IAutoCredentials;
-import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.generated.*;
-import org.apache.storm.utils.BufferFileInputStream;
-import org.apache.storm.utils.NimbusClient;
-import org.apache.storm.utils.Utils;
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Use this class to submit topologies to run on the Storm cluster. You should run your program
@@ -407,7 +400,7 @@ public class StormSubmitter {
     public static void submitTopologyWithProgressBar(String name, Map stormConf, StormTopology topology) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
 
         //build graph structure from topology
-        TopologyGraphBuilder.buildGraph(topology);
+        //TopologyGraphBuilder.buildGraph(topology);
 
         submitTopologyWithProgressBar(name, stormConf, topology, null);
     }

@@ -1,0 +1,1 @@
+storm.scheduler: "org.apache.storm.scheduler.resource.myResourceAwareScheduler"
