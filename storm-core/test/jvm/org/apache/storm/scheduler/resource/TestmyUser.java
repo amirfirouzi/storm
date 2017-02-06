@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource.strategies;
+package org.apache.storm.scheduler.resource;
 
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.resource.User;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;

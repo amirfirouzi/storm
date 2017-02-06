@@ -23,7 +23,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.*;
-import org.apache.storm.scheduler.resource.strategies.TestUtilsFormyResourceAwareScheduler;
+import org.apache.storm.scheduler.resource.TestUtilsFormyResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy.ObjectResources;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
@@ -70,7 +70,7 @@ public class TestmyResourceAwareStrategy {
         conf.putAll(Utils.readDefaultConfig());
         conf.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
         conf.put(Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy.class.getName());
-        conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, DefaultResourceAwareStrategy.class.getName());
+        conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, myResourceAwareStrategy.class.getName());
         conf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 50.0);
         conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 250);
         conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 250);
@@ -87,7 +87,7 @@ public class TestmyResourceAwareStrategy {
         Topologies topologies = new Topologies(topoMap);
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), conf);
 
-        ResourceAwareScheduler rs = new ResourceAwareScheduler();
+        myResourceAwareScheduler rs = new myResourceAwareScheduler();
 
         rs.prepare(conf);
         rs.schedule(topologies, cluster);

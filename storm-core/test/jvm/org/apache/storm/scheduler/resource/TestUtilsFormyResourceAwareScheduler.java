@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource.strategies;
+package org.apache.storm.scheduler.resource;
 
 import org.apache.storm.Config;
 import org.apache.storm.generated.Bolt;

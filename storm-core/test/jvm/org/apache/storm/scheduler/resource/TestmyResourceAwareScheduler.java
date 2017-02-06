@@ -16,16 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource.strategies;
+package org.apache.storm.scheduler.resource;
 
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.*;
-import org.apache.storm.scheduler.resource.RAS_Node;
-import org.apache.storm.scheduler.resource.RAS_Nodes;
-import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
-import org.apache.storm.scheduler.resource.User;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.BoltDeclarer;
