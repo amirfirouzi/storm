@@ -87,7 +87,7 @@ public class LocalCluster implements ILocalCluster {
      * Simple way to configure a LocalCluster to meet your needs.
      */
     public static class Builder {
-        private int supervisors = 2;
+        private int supervisors = 3;
         private int portsPerSupervisor = 3;
         private Map<String, Object> daemonConf = new HashMap<>();
         private INimbus inimbus = null;
