@@ -17,7 +17,6 @@
  */
 package org.apache.storm.graph;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.TreeSet;
 
@@ -26,6 +25,7 @@ public class Graph {
   private LinkedHashMap<Vertex, TreeSet<Vertex>> adjList;
   private LinkedHashMap<String, Vertex> vertices;
   private LinkedHashMap<Integer, String> verticesIds;
+  private LinkedHashMap<String, String> execsTovertices;
   private LinkedHashMap<String, Edge> edges;
   private int numOfVertices;
   private int numOfEdges;
@@ -34,6 +34,7 @@ public class Graph {
     adjList = new LinkedHashMap<Vertex, TreeSet<Vertex>>();
     vertices = new LinkedHashMap<String, Vertex>();
     verticesIds = new LinkedHashMap<Integer, String>();
+    execsTovertices = new LinkedHashMap<String, String>();
     edges = new LinkedHashMap<String, Edge>();
     numOfVertices = numOfEdges = 0;
 
@@ -43,59 +44,36 @@ public class Graph {
     return adjList;
   }
 
-  /**
-   * Add a new vertex name with no neighbors (if vertex does not yet exist)
-   *
-   * @param name vertex to be added
-   */
-  public Vertex addVertex(String name) {
+
+  public Vertex addVertex(ExecutorEntity exec) {
     Vertex v;
+    String name = exec.getComponentyName() + "-" + exec.getInstanceId();
     v = vertices.get(name);
     if (v == null) {
-      v = new Vertex(name);
+      v = new Vertex(name, exec.getExecutorName());
       numOfVertices += 1;
       v.setId(numOfVertices);
       vertices.put(name, v);
       verticesIds.put(numOfVertices, name);
+      execsTovertices.put(exec.getExecutorName(), name);
       adjList.put(v, new TreeSet<Vertex>());
 
     }
     return v;
   }
 
-  /**
-   * Returns the Vertex matching v
-   *
-   * @param name a String name of a Vertex that may be in
-   *             this Graph
-   * @return the Vertex with a name that matches v or null
-   * if no such Vertex exists in this Graph
-   */
   public Vertex getVertex(String name) {
     return vertices.get(name);
   }
 
-  public Vertex getVertex(Integer index) {return vertices.get(verticesIds.get(index));}
-  /**
-   * Returns true iff v is in this Graph, false otherwise
-   *
-   * @param name a String name of a Vertex that may be in
-   *             this Graph
-   * @return true iff v is in this Graph
-   */
+  public Vertex getVertex(Integer index) {
+    return vertices.get(verticesIds.get(index));
+  }
+
   public boolean hasVertex(String name) {
     return vertices.containsKey(name);
   }
 
-  /**
-   * Is from-to, an edge in this Graph. The graph is
-   * undirected so the order of from and to does not
-   * matter.
-   *
-   * @param from the name of the first Vertex
-   * @param to   the name of the second Vertex
-   * @return true iff from-to exists in this Graph
-   */
   public boolean hasEdge(String from, String to) {
 
     if (!hasVertex(from) || !hasVertex(to)) {
@@ -110,17 +88,12 @@ public class Graph {
     return edges.get(edgeName);
   }
 
-  /**
-   * Add to to from's set of neighbors, and add from to to's
-   * set of neighbors. Does not add an edge if another edge
-   * already exists
-   *
-   * @param from the name of the first Vertex
-   * @param to   the name of the second Vertex
-   */
-  public Edge addEdge(String from, String to) {
+
+  public Edge addEdge(ExecutorEntity execFrom, ExecutorEntity execTo) {
     Vertex src;
     Vertex dest;
+    String from = execFrom.getComponentyName() + "-" + execFrom.getInstanceId();
+    String to = execTo.getComponentyName() + "-" + execTo.getInstanceId();
     Edge edge = getEdge(from, to);
     if (edge != null) {
       return edge;
@@ -131,11 +104,11 @@ public class Graph {
 
     src = getVertex(from);
     if (src == null) {
-      src = addVertex(from);
+      src = addVertex(execFrom);
     }
     dest = getVertex(to);
     if (dest == null) {
-      dest = addVertex(to);
+      dest = addVertex(execTo);
     }
 
     adjList.get(src).add(dest);
@@ -144,13 +117,6 @@ public class Graph {
     return edge;
   }
 
-  /**
-   * Return an iterator over the neighbors of Vertex named v
-   *
-   * @param name the String name of a Vertex
-   * @return an Iterator over Vertices that are adjacent
-   * to the Vertex named v, empty set if v is not in graph
-   */
   public Iterable<Vertex> adjacentTo(String name) {
     if (!hasVertex(name)) {
       return EMPTY_SET;
@@ -158,11 +124,6 @@ public class Graph {
     return adjList.get(getVertex(name));
   }
 
-  /**
-   * Returns an Iterator over all Vertices in this Graph
-   *
-   * @return an Iterator over all Vertices in this Graph
-   */
   public Iterable<Vertex> getVertices() {
     return vertices.values();
   }

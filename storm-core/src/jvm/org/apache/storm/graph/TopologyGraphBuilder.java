@@ -21,7 +21,7 @@ package org.apache.storm.graph;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.SpoutSpec;
-import org.apache.storm.generated.StormTopology;
+import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 
 import java.io.File;
@@ -45,33 +45,43 @@ public final class TopologyGraphBuilder {
 
   public static void buildGraph(TopologyDetails td) {
     calculateParallelismMap(td);
+
+    Map<String, List<ExecutorDetails>> compToExecsMap = reverseExecstoCompMap(td);
     Graph g = new Graph();
     //Add Vertices for Spouts
+    ExecutorEntity currentExecutor;
     int spoutParallelism;
     for (Map.Entry<String, SpoutSpec> spout
         : td.getTopology().get_spouts().entrySet()) {
       spoutParallelism = spout.getValue().get_common().get_parallelism_hint();
       for (int i = 1; i <= spoutParallelism; i++) {
-        g.addVertex(spout.getKey() + "-" + Integer.toString(i));
+        currentExecutor = new ExecutorEntity(spout.getKey(), Integer.toString(i), compToExecsMap.get(spout.getKey()).get(i - 1).toString());
+        g.addVertex(currentExecutor);
       }
     }
 
+    ExecutorEntity fromExecutor;
     int boltParallelism;
+    List<String> compExecs = new ArrayList<>();
     //Add Vertices for Bolts, then Add Edges Between Components(spouts->bolts and bolts->bolts)
     //and their sub-tasks(considering number of instances)
     for (Map.Entry<String, Bolt> bolt
         : td.getTopology().get_bolts().entrySet()) {
       boltParallelism = bolt.getValue().get_common().get_parallelism_hint();
+
+
       for (int i = 1; i <= boltParallelism; i++) {
-        g.addVertex(bolt.getKey() + "-" + Integer.toString(i));
+        currentExecutor = new ExecutorEntity(bolt.getKey(), Integer.toString(i), compToExecsMap.get(bolt.getKey()).get(i - 1).toString());
+        g.addVertex(currentExecutor);
         for (GlobalStreamId input
             : bolt.getValue().get_common().get_inputs().keySet()) {
 
           int sourceParallelism = getComponentParallelism(input.get_componentId());
           for (int j = 1; j <= sourceParallelism; j++) {
-            g.addEdge(input.get_componentId()
-                + "-" + Integer.toString(j), bolt.getKey()
-                + "-" + Integer.toString(i));
+            fromExecutor = new ExecutorEntity(input.get_componentId(),
+                Integer.toString(j),
+                compToExecsMap.get(input.get_componentId()).get(j - 1).toString());
+            g.addEdge(fromExecutor, currentExecutor);
           }
         }
       }
@@ -80,6 +90,32 @@ public final class TopologyGraphBuilder {
     generateMetisInputFile(g, "metis", false, false, false, 0);
     int numOfPartitions = 3;
     getMetisPartitions(g, "metis", numOfPartitions);
+  }
+
+  private static Map<String, List<ExecutorDetails>> reverseExecstoCompMap(TopologyDetails td) {
+    Map<String, List<ExecutorDetails>> compToExecsMap = new HashMap<>();
+    for (Map.Entry<ExecutorDetails, String> exec :
+        td.getExecutorToComponent().entrySet()) {
+      if (compToExecsMap.containsKey(exec.getValue())) {
+        compToExecsMap.get(exec.getValue().toString()).add(exec.getKey());
+      } else {
+        compToExecsMap.put(exec.getValue(), new ArrayList<>());
+        compToExecsMap.get(exec.getValue()).add(exec.getKey());
+      }
+    }
+    return compToExecsMap;
+  }
+
+  private static List<String> getExecsOfComponent(TopologyDetails td, String compName) {
+
+    List<String> compExecs = new ArrayList<>();
+    for (ExecutorDetails exec :
+        td.getExecutorToComponent().keySet()) {
+      if (td.getExecutorToComponent().get(exec).equalsIgnoreCase(compName)) {
+        compExecs.add(exec.toString());
+      }
+    }
+    return compExecs;
   }
 
   private static void calculateParallelismMap(TopologyDetails td) {
