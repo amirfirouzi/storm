@@ -20,6 +20,8 @@ import org.apache.log4j.Logger;
 import org.apache.storm.scheduler.adaptive.cpuinfo.CPUInfo;
 
 import java.io.FileInputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -40,12 +42,14 @@ public class DataManager {
 	private DataManager() {
 		logger = Logger.getLogger(DataManager.class);
 		logger.info("Starting DataManager (working directory: " + System.getProperty("user.dir") + ")");
-		
+    ClassLoader cl = ClassLoader.getSystemClassLoader();
+
+    URL[] urls = ((URLClassLoader)cl).getURLs();
 		try {
 			// load configuration from file
 			logger.debug("Loading configuration from file");
 			Properties properties = new Properties();
-			properties.load(new FileInputStream("db.ini"));
+			properties.load(new FileInputStream("conf/db.ini"));
 			logger.debug("Configuration loaded");
 			
 			// load JDBC driver
