@@ -12,6 +12,7 @@ package org.apache.storm.scheduler.adaptive;
 
 import org.apache.log4j.Logger;
 import org.apache.storm.scheduler.*;
+import org.apache.storm.scheduler.resource.Component;
 
 import java.util.*;
 
@@ -37,12 +38,14 @@ public class OfflineScheduler implements IScheduler {
 				if (cluster.needsScheduling(topology)) {
 					logger.debug("Topology " + topology.getId() + " needs rescheduling");
 					// check if required data structures are included in topology conf
-					@SuppressWarnings("unchecked") List<String> componentList = (List<String>)topology.getConf().get("components");
+//					Map<String,Component> componentList = topology.getComponents();
+					Map<String, Component> componentList = topology.getComponents();
 					// component -> list of input components
-					@SuppressWarnings("unchecked") Map<String, List<String>> streamMap = (Map<String, List<String>>)topology.getConf().get("streams");
-					if (componentList != null && streamMap != null) {
-						logger.debug("components: " + collectionToString(componentList));
-						logger.debug("streams: " + mapToString(streamMap));
+					//@SuppressWarnings("unchecked") Map<String, List<String>> streamMap = (Map<String, List<String>>)topology.getConf().get("streams");
+//					if (componentList != null && streamMap != null) {
+					if (componentList != null) {
+						logger.debug("components: " + mapToString(componentList));
+						//logger.debug("streams: " + mapToString(streamMap));
 						
 						float alfa = 0;
 						if (topology.getConf().get("alfa") != null)
@@ -75,11 +78,11 @@ public class OfflineScheduler implements IScheduler {
 						Map<ExecutorDetails, Integer> executorToSlotMap = new HashMap<ExecutorDetails, Integer>();
 						
 						// iterate through the components, upstream to downstream
-						for (String component : componentList) {
+						for (Map.Entry<String, Component> component : componentList.entrySet()) {
 							logger.debug("Check for primary slots for component " + component);
-							List<String> inputComponentList = streamMap.get(component);
+							List<String> inputComponentList = component.getValue().parents;
 							logger.debug("input components: " + Utils.collectionToString(inputComponentList));
-							List<ExecutorDetails> executorList = componentToExecutorMap.get(component);
+							List<ExecutorDetails> executorList = componentToExecutorMap.get(component.getKey());
 							logger.debug("executors: " + Utils.collectionToString(executorList));
 							
 							// identify primary slots and secondary slots
@@ -115,8 +118,9 @@ public class OfflineScheduler implements IScheduler {
 							 * this way, we ensure that all the slots are used;
 							 * this is done after having already scheduled epsilon of the components
 							 */
-							logger.debug("this component index: " + componentList.indexOf(component) + ", index of component where to start forcing to use empty slots: " + (int)(epsilon * componentList.size()));
-							if (componentList.indexOf(component) >= (int)(epsilon * componentList.size()) ) {
+							List<String> components = new ArrayList<String>(componentList.keySet());
+							logger.debug("this component index: " + components.indexOf(component) + ", index of component where to start forcing to use empty slots: " + (int)(epsilon * componentList.size()));
+							if (components.indexOf(component.getKey()) >= (int)(epsilon * componentList.size()) ) {
 								List<Integer> slotToPromoteList = new ArrayList<Integer>();
 								for (int secondarySlot : secondarySlotList)
 									if (slotList.get(secondarySlot).isEmpty())
@@ -185,7 +189,7 @@ public class OfflineScheduler implements IScheduler {
 						for (List<ExecutorDetails> slot : slotList) {
 							WorkerSlot worker = nodeHelper.getWorker(i);
 							cluster.assign(worker, topology.getId(), slot);
-							logger.info("We assigned executors:" + collectionToString(slot) + " to slot: [" + worker.getNodeId() + ", " + worker.getPort() + "]");
+							logger.info("We assigned executors:" + listToString((Map<String, List<String>>) slot) + " to slot: [" + worker.getNodeId() + ", " + worker.getPort() + "]");
 							i++;
 						}
 					
@@ -211,6 +215,43 @@ public class OfflineScheduler implements IScheduler {
 	}
 	
 	/**
+	 * @param components
+	 * @return the list in csv format
+	 */
+	private String mapToString(Map<String, ?> components) {
+		if (components == null)
+			return "null";
+		if (components.isEmpty())
+			return "<empty list>";
+		StringBuffer sb = new  StringBuffer();
+		int i = 0;
+		for (String component : components.keySet()) {
+			sb.append(component.toString());
+			if (i < components.size() - 1)
+				sb.append(", ");
+			i++;
+		}
+		return sb.toString();
+	}
+	
+	private String listToString(Map<String, List<String>> map) {
+		if (map == null)
+			return "null";
+		if (map.keySet().isEmpty())
+			return "<empty map>";
+		StringBuffer sb = new  StringBuffer();
+		int i = 0;
+		for (Object key : map.keySet()) {
+			sb.append(key.toString() + " -> (");
+			sb.append(collectionToString(map.get(key)) + ")");
+			if (i < map.keySet().size() - 1)
+				sb.append(", ");
+			i++;
+		}
+		return sb.toString();
+	}
+
+	/**
 	 * @param list
 	 * @return the list in csv format
 	 */
@@ -229,22 +270,4 @@ public class OfflineScheduler implements IScheduler {
 		}
 		return sb.toString();
 	}
-	
-	private String mapToString(Map<String, List<String>> map) {
-		if (map == null)
-			return "null";
-		if (map.keySet().isEmpty())
-			return "<empty map>";
-		StringBuffer sb = new  StringBuffer();
-		int i = 0;
-		for (Object key : map.keySet()) {
-			sb.append(key.toString() + " -> (");
-			sb.append(collectionToString(map.get(key)) + ")");
-			if (i < map.keySet().size() - 1)
-				sb.append(", ");
-			i++;
-		}
-		return sb.toString();
-	}
-
 }

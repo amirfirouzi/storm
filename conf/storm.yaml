@@ -1,1 +1,3 @@
-storm.scheduler: "org.apache.storm.scheduler.resource.myResourceAwareScheduler"
+storm.scheduler: "org.apache.storm.scheduler.adaptive.OnlineScheduler"
+traffic.improvement: 50
+reschedule.timeout: 60
