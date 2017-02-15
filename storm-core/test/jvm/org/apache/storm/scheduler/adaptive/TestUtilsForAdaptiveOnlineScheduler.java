@@ -193,22 +193,22 @@ public class TestUtilsForAdaptiveOnlineScheduler {
   }
 
   public static class TestSpout extends BaseRichSpout {
+    public static Logger LOG = LoggerFactory.getLogger(org.apache.storm.testing.TestWordSpout.class);
     boolean _isDistributed;
     SpoutOutputCollector _collector;
-
-    public TestSpout() {
-      this(true);
-    }
-
-    public TestSpout(boolean isDistributed) {
-      _isDistributed = isDistributed;
-    }
+    private TaskMonitor taskMonitor;
 
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
       _collector = collector;
+      // register this spout instance (task) to the java process monitor
+      WorkerMonitor.getInstance().setContextInfo(context);
+// create the object required to notify relevant events (also notify thread ID)
+      taskMonitor = new TaskMonitor(context.getThisTaskId());
+
     }
 
     public void close() {
+
     }
 
     public void nextTuple() {
@@ -216,13 +216,18 @@ public class TestUtilsForAdaptiveOnlineScheduler {
       final String[] words = new String[]{"nathan", "mike", "jackson", "golda", "bertels"};
       final Random rand = new Random();
       final String word = words[rand.nextInt(words.length)];
+
+      taskMonitor.checkThreadId();
+
       _collector.emit(new Values(word));
     }
 
     public void ack(Object msgId) {
+
     }
 
     public void fail(Object msgId) {
+
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -243,16 +248,24 @@ public class TestUtilsForAdaptiveOnlineScheduler {
 
   public static class TestBolt extends BaseRichBolt {
     OutputCollector _collector;
+    private TaskMonitor taskMonitor;
 
     @Override
-    public void prepare(Map conf, TopologyContext context,
-                        OutputCollector collector) {
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
       _collector = collector;
+      // register this spout instance (task) to the java process monitor
+      WorkerMonitor.getInstance().setContextInfo(context);
+      // create the object for notifying relevant events (received tuple, which in turn notifies thread ID)
+      taskMonitor = new TaskMonitor(context.getThisTaskId());
+
     }
 
     @Override
     public void execute(Tuple tuple) {
+      taskMonitor.notifyTupleReceived(tuple);
+
       _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
+      _collector.ack(tuple);
     }
 
     @Override

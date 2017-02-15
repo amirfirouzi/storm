@@ -92,7 +92,7 @@ public class AdaptiveExclamationTopology {
     public Map<String, Object> getComponentConfiguration() {
       if (!_isDistributed) {
         Map<String, Object> ret = new HashMap<String, Object>();
-        ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 1);
+        ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 5);
         return ret;
       } else {
         return null;
@@ -133,9 +133,10 @@ public class AdaptiveExclamationTopology {
   public static void main(String[] args) throws Exception {
     TopologyBuilder builder = new TopologyBuilder();
 
-    builder.setSpout("a", new TestWordSpoutAdaptive(), 3);
+    builder.setSpout("a", new TestWordSpoutAdaptive(), 2);
+//    builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"));
     builder.setBolt("b", new ExclamationBolt(), 2).shuffleGrouping("a");
-    builder.setBolt("c", new ExclamationBolt(), 3).shuffleGrouping("b");
+    builder.setBolt("c", new ExclamationBolt(), 2).allGrouping("b");
 
     Config conf = new Config();
     conf.setDebug(true);
