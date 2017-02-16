@@ -138,7 +138,8 @@ public class WorkerMonitor {
 		List<Integer> trafficData = trafficStats.get(pair);
 		for (int traffic : trafficData)
 			total += traffic;
-		return (int)((float)total / (trafficData.size() * timeWindowSlotLength));
+//		return (int)((float)total / (trafficData.size() * timeWindowSlotLength));
+		return (int)((float)total / (trafficData.size()));
 	}
 	
 	/**

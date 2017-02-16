@@ -71,6 +71,7 @@ public class TaskMonitor {
 		if (now - lastCheck >= slotLength) {
 			synchronized (this) {
 				trafficStatToReturn = trafficStatMap;
+//        trafficStatMap.clear();
 				trafficStatMap = new HashMap<Integer, Integer>();
 				lastCheck += slotLength;
 			}
