@@ -40,31 +40,31 @@ public class Topology {
 		return topologyID + "[slot count: " + slotList.size() + ", alfa: " + alfa + ", beta: " + beta + "]";
 	}
 	
-	public Topology(TopologyDetails details) {
-		this.topologyID = details.getId();
-		executorCount = details.getExecutors().size();
-		int slotCount = Math.min(details.getNumWorkers(), executorCount);
+	public Topology(TopologyDetails topologyDetails) {
+		this.topologyID = topologyDetails.getId();
+		executorCount = topologyDetails.getExecutors().size();
+		int slotCount = Math.min(topologyDetails.getNumWorkers(), executorCount);
 		slotList = new ArrayList<Slot>();
 		for (int i = 0; i < slotCount; i++)
 			slotList.add(new Slot(this, i));
 		
-		if (details.getConf().get(Utils.ALFA) != null)
-			alfa = Float.parseFloat((String)details.getConf().get(Utils.ALFA));
+		if (topologyDetails.getConf().get(Utils.ALFA) != null)
+			alfa = Float.parseFloat((String)topologyDetails.getConf().get(Utils.ALFA));
 		else
 			alfa = 0;
 		
-		if (details.getConf().get(Utils.BETA) != null)
-			beta = Float.parseFloat((String)details.getConf().get(Utils.BETA));
+		if (topologyDetails.getConf().get(Utils.BETA) != null)
+			beta = Float.parseFloat((String)topologyDetails.getConf().get(Utils.BETA));
 		else
 			beta = 1;
 		
-		if (details.getConf().get(Utils.GAMMA) != null)
-			gamma = Float.parseFloat((String)details.getConf().get(Utils.GAMMA));
+		if (topologyDetails.getConf().get(Utils.GAMMA) != null)
+			gamma = Float.parseFloat((String)topologyDetails.getConf().get(Utils.GAMMA));
 		else
-			gamma = -1; // a negative value means that no control on the load is enforced at all
+			gamma = 1; // a negative value means that no control on the load is enforced at all
 		
-		if (details.getConf().get(Utils.DELTA) != null)
-			delta = Float.parseFloat((String)details.getConf().get(Utils.DELTA));
+		if (topologyDetails.getConf().get(Utils.DELTA) != null)
+			delta = Float.parseFloat((String)topologyDetails.getConf().get(Utils.DELTA));
 		else
 			delta = 0;
 		
