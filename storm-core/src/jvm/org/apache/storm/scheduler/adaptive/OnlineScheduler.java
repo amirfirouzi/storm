@@ -186,7 +186,7 @@ public class OnlineScheduler implements IScheduler {
   }
 
 	/*private void checkAckers(String topologyID, Cluster cluster) throws Exception {
-		Set<ExecutorDetails> executorSet = cluster.getAssignmentById(topologyID).getExecutors();
+    Set<ExecutorDetails> executorSet = cluster.getAssignmentById(topologyID).getExecutors();
 		Map<ExecutorDetails, WorkerSlot> assignmentsMap = cluster.getAssignmentById(topologyID).getExecutorToSlot();
 		for (ExecutorDetails executor : executorSet) {
 			if (executor.getStartTask() == Utils.ACKER_TAKS_ID && executor.getEndTask() == Utils.ACKER_TAKS_ID) {
@@ -209,8 +209,8 @@ public class OnlineScheduler implements IScheduler {
       topologyList.add(topology);
       // logger.info("Max number of executors per slot: " + topology.getMaxExecutorsPerSlot() + ", max load per slot: " + topology.getMaxLoadForASlot() + " cycle/s, slot count: " + topology.getSlots().size() + ", total load: " + topology.getTotalLoad() + " cycle/s, alfa: " + topology.getAlfa() + ", beta: " + topology.getBeta());
       logger.info("Max number of executors per slot: " + topology.getMaxExecutorsPerSlot() + ", slot count: " + topology.getSlots().size() + ", total load: " + topology.getTotalLoad() + " cycle/s, alfa: " + topology.getAlfa() + ", beta: " + topology.getBeta());
-			/*if (Integer.parseInt(topologyDetails.getConf().get(Config.TOPOLOGY_ACKER_EXECUTORS).toString() ) != 0)
-				checkAckers(topologyID, cluster);*/
+      /*if (Integer.parseInt(topologyDetails.getConf().get(Config.TOPOLOGY_ACKER_EXECUTORS).toString() ) != 0)
+        checkAckers(topologyID, cluster);*/
       List<ExecutorPair> interExecutorTrafficList = TrafficManager.getInstance().getInterExecutorTrafficList(topologyID);
       logger.info("Inter-executor traffic stats: " + Utils.collectionToString(interExecutorTrafficList));
       if (interExecutorTrafficList.isEmpty()) {
@@ -264,7 +264,7 @@ public class OnlineScheduler implements IScheduler {
               if (slot.contains(executorPair.getDestination()))
                 slot.remove(executorPair.getDestination());
             }
-            logger.debug("Slots to use after such removals: " + Utils.collectionToString(slotList));
+            logger.info("Slots to use after such removals: " + Utils.collectionToString(slotList));
 
             logger.debug("Check every possible combination");
             Slot bestSlotForSource = null;

@@ -140,7 +140,7 @@ public class AdaptiveExclamationTopology {
 
     Config conf = new Config();
     conf.setDebug(true);
-    conf.setNumWorkers(2);
+    conf.setNumWorkers(3);
     //conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy.class);
 
     if (args != null && args.length > 0) {

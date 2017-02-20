@@ -47,23 +47,34 @@ public class Topology {
 		slotList = new ArrayList<Slot>();
 		for (int i = 0; i < slotCount; i++)
 			slotList.add(new Slot(this, i));
-		
+
+		//ToDo: ALFA
+		// Controls the balancing of the number of executors assigned per slot.
+    // alfa affects the maximum number M of executors that can be placed in a single slot.
 		if (topologyDetails.getConf().get(Utils.ALFA) != null)
 			alfa = Float.parseFloat((String)topologyDetails.getConf().get(Utils.ALFA));
 		else
 			alfa = 0;
-		
-		if (topologyDetails.getConf().get(Utils.BETA) != null)
+
+    //ToDo: BETA
+    // Controls the number of nodes to use. It works similarly to alfa.
+    // If beta = 0, then min = ceil(Wi / N) nodes are used. If beta = 1, then max = min(Wi, N) nodes are used.
+    // In general, min + beta * (max - min) nodes are used.
+    if (topologyDetails.getConf().get(Utils.BETA) != null)
 			beta = Float.parseFloat((String)topologyDetails.getConf().get(Utils.BETA));
 		else
 			beta = 1;
-		
+
+		//ToDo: GAMMA
+    // Controls the maximum load acceptable by a slot, it is computed asgamma * (totalLoad / Wi)
 		if (topologyDetails.getConf().get(Utils.GAMMA) != null)
 			gamma = Float.parseFloat((String)topologyDetails.getConf().get(Utils.GAMMA));
 		else
 			gamma = 1; // a negative value means that no control on the load is enforced at all
-		
-		if (topologyDetails.getConf().get(Utils.DELTA) != null)
+
+    //ToDo: DELTA
+    // Controls the maximum number of slots per node.
+    if (topologyDetails.getConf().get(Utils.DELTA) != null)
 			delta = Float.parseFloat((String)topologyDetails.getConf().get(Utils.DELTA));
 		else
 			delta = 0;

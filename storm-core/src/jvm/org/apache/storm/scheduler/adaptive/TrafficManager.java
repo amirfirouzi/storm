@@ -102,21 +102,21 @@ public class TrafficManager {
 		if (interExecutorTrafficList == null || interExecutorTrafficList.isEmpty()) {
 			interExecutorTrafficList = DataManager.getInstance().getInterExecutorTrafficList(topologyID);
 			interExecutorTrafficMap.put(topologyID, interExecutorTrafficList);
-			compileInterExecutorTrafficStat(topologyID, interExecutorTrafficList);
+			neighboursInterExecutorTrafficStat(topologyID, interExecutorTrafficList);
 		}*/
 		
 		List<ExecutorPair> interExecutorTrafficList = DataManager.getInstance().getInterExecutorTrafficList(topologyID);
-		compileInterExecutorTrafficStat(topologyID, interExecutorTrafficList);
+		neighboursInterExecutorTrafficStat(topologyID, interExecutorTrafficList);
 		return interExecutorTrafficList;
 	}
 	
 	/**
-	 * Given the list of executor pairs, creates a map executor -> list of executors it communicates with
+	 * Given the list of executor pairs, creates a map executor -> list of executors it(bidirectional>executers that are connected to one and vice versa) communicates with
 	 * and puts it in compiledInterExecutorTrafficMap
 	 * @param topologyID
 	 * @param executorPairList
 	 */
-	private void compileInterExecutorTrafficStat(String topologyID, List<ExecutorPair> executorPairList) {
+	private void neighboursInterExecutorTrafficStat(String topologyID, List<ExecutorPair> executorPairList) {
 		Map<Executor, List<ExecutorPair>> trafficMap = new HashMap<Executor, List<ExecutorPair>>();
 		for (ExecutorPair pair : executorPairList) {
 			getExecutorPairs(trafficMap, pair.getSource()).add(pair);

@@ -4,10 +4,10 @@ reschedule.timeout: 60
 
 
 #Adaptive Scheduler Configs
-jdbc.driver: "com.mysql.jdbc.Driver"
-data.connection.uri: "jdbc:mysql://localhost/stormscheduler?user=stormuser&password=123456"
-validation.query: "SELECT"
-node-name: "amir-pc"
-capacity: 80
-time.window.slot.count: 50
-time.window.slot.length: 50
+#jdbc.driver: "com.mysql.jdbc.Driver"
+#data.connection.uri: "jdbc:mysql://localhost/stormscheduler?user=stormuser&password=123456"
+#validation.query: "SELECT"
+#node-name: "amir-pc"
+#capacity: 80
+#time.window.slot.count: 50
+#time.window.slot.length: 50
