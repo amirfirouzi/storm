@@ -33,6 +33,8 @@
         <worker-launcher.conf.dir>/etc/storm</worker-launcher.conf.dir>
         <worker-launcher.additional_cflags></worker-launcher.additional_cflags>
         <argLine></argLine>
+        <nd4j.version>0.8.0</nd4j.version>
+        <dl4j.version>0.8.0</dl4j.version>
     </properties>
 
     <dependencies>
@@ -382,6 +384,11 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-native-platform</artifactId>
+            <version>${nd4j.version}</version>
         </dependency>
     </dependencies>
     <build>

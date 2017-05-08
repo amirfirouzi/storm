@@ -50,15 +50,18 @@ public class AdaptiveExclamationTopology {
     public static Logger LOG = LoggerFactory.getLogger(org.apache.storm.testing.TestWordSpout.class);
     boolean _isDistributed;
     SpoutOutputCollector _collector;
+    //region monitoring
     private TaskMonitor taskMonitor;
+    //endregion monitoring
 
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
       _collector = collector;
-      // register this spout instance (task) to the java process monitor
+      //region monitoring
+      //register this spout instance (task) to the java process monitor
       WorkerMonitor.getInstance().setContextInfo(context);
-// create the object required to notify relevant events (also notify thread ID)
+      //create the object required to notify relevant events (also notify thread ID)
       taskMonitor = new TaskMonitor(context.getThisTaskId());
-
+      //endregion
     }
 
     public void close() {
@@ -70,9 +73,9 @@ public class AdaptiveExclamationTopology {
       final String[] words = new String[]{"nathan", "mike", "jackson", "golda", "bertels"};
       final Random rand = new Random();
       final String word = words[rand.nextInt(words.length)];
-
+      //region monitoring
       taskMonitor.checkThreadId();
-
+      //endregion
       _collector.emit(new Values(word));
     }
 
@@ -102,22 +105,26 @@ public class AdaptiveExclamationTopology {
 
   public static class ExclamationBolt extends BaseRichBolt {
     OutputCollector _collector;
+    //region monitoring
     private TaskMonitor taskMonitor;
+    //endregion monitoring
 
     @Override
     public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
       _collector = collector;
+      //region monitoring
       // register this spout instance (task) to the java process monitor
       WorkerMonitor.getInstance().setContextInfo(context);
       // create the object for notifying relevant events (received tuple, which in turn notifies thread ID)
       taskMonitor = new TaskMonitor(context.getThisTaskId());
-
+      //endregion monitoring
     }
 
     @Override
     public void execute(Tuple tuple) {
+      //region monitoring
       taskMonitor.notifyTupleReceived(tuple);
-
+      //endregion monitoring
       _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
       _collector.ack(tuple);
     }
@@ -133,14 +140,14 @@ public class AdaptiveExclamationTopology {
   public static void main(String[] args) throws Exception {
     TopologyBuilder builder = new TopologyBuilder();
 
-    builder.setSpout("a", new TestWordSpoutAdaptive(), 2);
+    builder.setSpout("a", new TestWordSpoutAdaptive(), 1);
 //    builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"));
-    builder.setBolt("b", new ExclamationBolt(), 3).shuffleGrouping("a");
+    builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"));
     builder.setBolt("c", new ExclamationBolt(), 2).allGrouping("b");
 
     Config conf = new Config();
     conf.setDebug(true);
-    conf.setNumWorkers(3);
+    conf.setNumWorkers(2);
     //conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy.class);
 
     if (args != null && args.length > 0) {

@@ -19,6 +19,7 @@
 package org.apache.storm.scheduler.resource;
 
 import org.apache.storm.Config;
+import org.apache.storm.graph.TopologyGraphBuilder;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
@@ -48,7 +49,7 @@ public class myResourceAwareScheduler implements IScheduler {
 
     @Override
     public void schedule(Topologies topologies, Cluster cluster) {
-        LOG.debug("\n\n\nRerunning ResourceAwareScheduler...");
+        LOG.debug("\n\n\nRerunning myResourceAwareScheduler...");
         //initialize data structures
         initialize(topologies, cluster);
         //logs everything that is currently scheduled and the location at which they are scheduled
@@ -108,6 +109,7 @@ public class myResourceAwareScheduler implements IScheduler {
     }
 
     public void scheduleTopology(TopologyDetails td) {
+      TopologyGraphBuilder.buildGraph(td);
         User topologySubmitter = this.schedulingState.userMap.get(td.getTopologySubmitter());
         if (this.schedulingState.cluster.getUnassignedExecutors(td).size() > 0) {
             LOG.debug("/********Scheduling topology {} from User {}************/", td.getName(), topologySubmitter);

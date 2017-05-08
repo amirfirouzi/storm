@@ -87,9 +87,9 @@ public final class TopologyGraphBuilder {
       }
     }
 
-    generateMetisInputFile(g, "metis", false, false, false, 0);
+    //generateMetisInputFile(g, "metis", false, false, false, 0);
     int numOfPartitions = 3;
-    getMetisPartitions(g, "metis", numOfPartitions);
+    //getMetisPartitions(g, "metis", numOfPartitions);
   }
 
   private static Map<String, List<ExecutorDetails>> reverseExecstoCompMap(TopologyDetails td) {
@@ -133,6 +133,8 @@ public final class TopologyGraphBuilder {
   private static int getComponentParallelism(String componentName) {
     return parallelismMap.getOrDefault(componentName, 0);
   }
+
+//  public static
 
   /**
    * Writes the input data required for METIS and Returns the data as a String
