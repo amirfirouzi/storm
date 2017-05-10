@@ -19,7 +19,10 @@
 package org.apache.storm.scheduler.resource;
 
 import org.apache.storm.Config;
+import org.apache.storm.graph.Graph;
 import org.apache.storm.graph.TopologyGraphBuilder;
+import org.apache.storm.graph.partitioner.Partitioner;
+import org.apache.storm.graph.partitioner.PartitioningResult;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
@@ -109,7 +112,8 @@ public class myResourceAwareScheduler implements IScheduler {
     }
 
     public void scheduleTopology(TopologyDetails td) {
-      TopologyGraphBuilder.buildGraph(td);
+      Graph graph = TopologyGraphBuilder.buildGraph(td);
+//      PartitioningResult partitioning = Partitioner.doPartition()
         User topologySubmitter = this.schedulingState.userMap.get(td.getTopologySubmitter());
         if (this.schedulingState.cluster.getUnassignedExecutors(td).size() > 0) {
             LOG.debug("/********Scheduling topology {} from User {}************/", td.getName(), topologySubmitter);

@@ -43,7 +43,7 @@ public final class TopologyGraphBuilder {
     //not called
   }
 
-  public static void buildGraph(TopologyDetails td) {
+  public static Graph buildGraph(TopologyDetails td) {
     calculateParallelismMap(td);
 
     Map<String, List<ExecutorDetails>> compToExecsMap = reverseExecstoCompMap(td);
@@ -87,8 +87,9 @@ public final class TopologyGraphBuilder {
       }
     }
 
+    return g;
     //generateMetisInputFile(g, "metis", false, false, false, 0);
-    int numOfPartitions = 3;
+//    int numOfPartitions = 3;
     //getMetisPartitions(g, "metis", numOfPartitions);
   }
 
@@ -133,9 +134,6 @@ public final class TopologyGraphBuilder {
   private static int getComponentParallelism(String componentName) {
     return parallelismMap.getOrDefault(componentName, 0);
   }
-
-//  public static
-
   /**
    * Writes the input data required for METIS and Returns the data as a String
    */
