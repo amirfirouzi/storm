@@ -27,8 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class myResourceAwareStrategy implements IStrategy {
-  private static final Logger LOG = LoggerFactory.getLogger(myResourceAwareStrategy.class);
+public class myStrategy implements IStrategy {
+  private static final Logger LOG = LoggerFactory.getLogger(myStrategy.class);
   private Cluster _cluster;
   private Topologies _topologies;
   private Map<String, List<String>> _clusterInfo;
@@ -47,7 +47,7 @@ public class myResourceAwareStrategy implements IStrategy {
 
   public SchedulingResult schedule(TopologyDetails td) {
     //build graph structure from topology
-    TopologyGraphBuilder.buildGraph(td);
+//    TopologyGraphBuilder.buildGraph(td);
 
     if (_nodes.getNodes().size() <= 0) {
       LOG.warn("No available nodes to schedule tasks on!");
@@ -93,7 +93,7 @@ public class myResourceAwareStrategy implements IStrategy {
           (td.getExecutors().size() - unassignedExecutors.size()) + "/" + td.getExecutors().size() + " executors scheduled");
     } else {
       LOG.debug("All resources successfully scheduled!");
-      result = SchedulingResult.successWithMsg(schedulerAssignmentMap, "Fully Scheduled by DefaultResourceAwareStrategy");
+      result = SchedulingResult.successWithMsg(schedulerAssignmentMap, "Fully Scheduled by myStrategy");
     }
     if (schedulerAssignmentMap == null) {
       LOG.error("Topology {} not successfully scheduled!", td.getId());

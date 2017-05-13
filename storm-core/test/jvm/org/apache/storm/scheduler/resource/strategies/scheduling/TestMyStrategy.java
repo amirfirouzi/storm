@@ -23,7 +23,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.*;
-import org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy.ObjectResources;
+import org.apache.storm.scheduler.resource.strategies.scheduling.myStrategy.ObjectResources;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
@@ -34,9 +34,9 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 
-public class TestmyResourceAwareStrategy {
+public class TestMyStrategy {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TestmyResourceAwareStrategy.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TestMyStrategy.class);
 
   private static int currentTime = 1450418597;
 
@@ -44,7 +44,7 @@ public class TestmyResourceAwareStrategy {
    * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
    */
   @Test
-  public void testmyResourceAwareStrategy() {
+  public void testmyStrategy() {
     int spoutParallelism = 1;
     int boltParallelism = 2;
     TopologyBuilder builder = new TopologyBuilder();
@@ -64,12 +64,12 @@ public class TestmyResourceAwareStrategy {
     Map<String, Number> resourceMap = new HashMap<String, Number>();
     resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 150.0);
     resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1500.0);
-//        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genHeterogeneousSupervisors(4, 4, resourceMap);
-    Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genHeterogeneousSupervisors(4, 4);
+//        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genHeterogeneousSupervisors(4, 4, resourceMap);
+    Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genHeterogeneousSupervisors(4, 4);
     conf.putAll(Utils.readDefaultConfig());
     conf.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
     conf.put(Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy.class.getName());
-    conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, myResourceAwareStrategy.class.getName());
+    conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, myStrategy.class.getName());
     conf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 50.0);
     conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 250);
     conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 250);
@@ -86,7 +86,7 @@ public class TestmyResourceAwareStrategy {
     Topologies topologies = new Topologies(topoMap);
     Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), conf);
 
-    myResourceAwareScheduler rs = new myResourceAwareScheduler();
+    myScheduler rs = new myScheduler();
 
     rs.prepare(conf);
     rs.schedule(topologies, cluster);
@@ -245,7 +245,7 @@ public class TestmyResourceAwareStrategy {
 
     Topologies topologies = new Topologies(topoMap);
 
-    myResourceAwareStrategy rs = new myResourceAwareStrategy();
+    myStrategy rs = new myStrategy();
 
     rs.prepare(new SchedulingState(new HashMap<String, User>(), cluster, topologies, config));
     TreeSet<ObjectResources> sortedRacks = rs.sortRacks(topo1.getId(), new HashMap<WorkerSlot, Collection<ExecutorDetails>>());
@@ -292,7 +292,7 @@ public class TestmyResourceAwareStrategy {
       cluster.assign(targetSlot, topo2.getId(), Arrays.asList(targetExec));
     }
 
-    rs = new myResourceAwareStrategy();
+    rs = new myStrategy();
     rs.prepare(new SchedulingState(new HashMap<String, User>(), cluster, topologies, config));
     // schedule topo2
     schedulingResult = rs.schedule(topo2);

@@ -1,6 +1,10 @@
 package org.apache.storm.graph.partitioner;
 
 import org.apache.storm.graph.Graph;
+import org.apache.storm.graph.Vertex;
+import org.apache.storm.scheduler.resource.RAS_Node;
+import org.apache.storm.scheduler.resource.RAS_Nodes;
+import org.apache.storm.scheduler.resource.SchedulingState;
 
 /**
  * Created by amir on 5/7/17.
@@ -17,9 +21,31 @@ public class ModelGenerator {
     public ModelGenerator() {
     }
 
-//    public Model getModelFromGraph(Graph g){
-//
-//    }
+    public Model generateModel(Graph g, SchedulingState state) throws Exception {
+      RAS_Nodes nodes = state.nodes;
+
+      int[] M1=new int[nodes.getNodes().size()];
+      int[] M2=new int[nodes.getNodes().size()];
+
+      int[] R1= new int[g.numVertices()];
+      int[] R2= new int[g.numVertices()];
+
+      int i=0;
+      for (RAS_Node node:
+          nodes.getNodes()) {
+        M1[i]=node.getAvailableCpuResources().intValue();
+        M2[i++]=node.getAvailableMemoryResources().intValue();
+      }
+      i=0;
+      for (Vertex vertex:
+          g.getVertices()) {
+        R1[i]=vertex.getWeights().get("cpu").intValue();
+        R2[i++]=vertex.getWeights().get("mem").intValue();
+      }
+
+      return getModel1();
+
+    }
 
     public Model getModel1() throws Exception {
         R1 = new int[]{120, 100, 60, 120, 200};

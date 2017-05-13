@@ -66,11 +66,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void testRASNodeSlotAssign() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(5, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(5, 4, resourceMap);
         Topologies topologies = new Topologies(new HashMap<String, TopologyDetails>());
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), new HashMap());
         Map<String, RAS_Node> nodes = RAS_Nodes.getAllNodesFrom(cluster, topologies);
@@ -85,7 +85,7 @@ public class TestmyResourceAwareScheduler {
         Assert.assertEquals(0, node.totalSlotsUsed());
         Assert.assertEquals(4, node.totalSlots());
 
-        TopologyDetails topology1 = TestUtilsFormyResourceAwareScheduler.getTopology("topology1", new HashMap(), 1, 0, 2, 0, 0, 0);
+        TopologyDetails topology1 = TestUtilsFormyScheduler.getTopology("topology1", new HashMap(), 1, 0, 2, 0, 0, 0);
 
         List<ExecutorDetails> executors11 = new ArrayList<>();
         executors11.add(new ExecutorDetails(1, 1));
@@ -105,7 +105,7 @@ public class TestmyResourceAwareScheduler {
         Assert.assertEquals(2, node.totalSlotsUsed());
         Assert.assertEquals(4, node.totalSlots());
 
-        TopologyDetails topology2 = TestUtilsFormyResourceAwareScheduler.getTopology("topology2", new HashMap(), 1, 0, 2, 0, 0, 0);
+        TopologyDetails topology2 = TestUtilsFormyScheduler.getTopology("topology2", new HashMap(), 1, 0, 2, 0, 0, 0);
 
         List<ExecutorDetails> executors21 = new ArrayList<>();
         executors21.add(new ExecutorDetails(1, 1));
@@ -135,11 +135,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void sanityTestOfScheduling() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(1, 2, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(1, 2, resourceMap);
 
         Config config = new Config();
         config.putAll(defaultTopologyConf);
@@ -147,7 +147,7 @@ public class TestmyResourceAwareScheduler {
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
 
-        TopologyDetails topology1 = TestUtilsFormyResourceAwareScheduler.getTopology("topology1", config, 1, 1, 1, 1, 0, 0);
+        TopologyDetails topology1 = TestUtilsFormyScheduler.getTopology("topology1", config, 1, 1, 1, 1, 0, 0);
         Map<String, TopologyDetails> topoMap = new HashMap<>();
         topoMap.put(topology1.getId(), topology1);
         Topologies topologies = new Topologies(topoMap);
@@ -171,11 +171,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void testTopologyWithMultipleSpouts() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(2, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(2, 4, resourceMap);
 
         TopologyBuilder builder1 = new TopologyBuilder(); // a topology with multiple spouts
         builder1.setSpout("wordSpout1", new TestWordSpout(), 1);
@@ -189,14 +189,14 @@ public class TestmyResourceAwareScheduler {
 
         Config config = new Config();
         config.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology1);
+        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology1);
         TopologyDetails topology1 = new TopologyDetails("topology1", config, stormTopology1, 0, executorMap1, 0);
 
         TopologyBuilder builder2 = new TopologyBuilder(); // a topology with two unconnected partitions
         builder2.setSpout("wordSpoutX", new TestWordSpout(), 1);
         builder2.setSpout("wordSpoutY", new TestWordSpout(), 1);
         StormTopology stormTopology2 = builder2.createTopology();
-        Map<ExecutorDetails, String> executorMap2 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology2);
+        Map<ExecutorDetails, String> executorMap2 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology2);
         TopologyDetails topology2 = new TopologyDetails("topology2", config, stormTopology2, 0, executorMap2, 0);
 
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
@@ -239,11 +239,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void testTopologySetCpuAndMemLoad() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(2, 2, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(2, 2, resourceMap);
 
         TopologyBuilder builder1 = new TopologyBuilder(); // a topology with multiple spouts
         builder1.setSpout("wordSpout", new TestWordSpout(), 1).setCPULoad(20.0).setMemoryLoad(200.0);
@@ -252,7 +252,7 @@ public class TestmyResourceAwareScheduler {
 
         Config config = new Config();
         config.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology1);
+        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology1);
         TopologyDetails topology1 = new TopologyDetails("topology1", config, stormTopology1, 0, executorMap1, 0);
 
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
@@ -287,11 +287,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void testResourceLimitation() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(2, 2, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(2, 2, resourceMap);
 
         TopologyBuilder builder1 = new TopologyBuilder(); // a topology with multiple spouts
         builder1.setSpout("wordSpout", new TestWordSpout(), 2).setCPULoad(250.0).setMemoryLoad(1000.0, 200.0);
@@ -300,7 +300,7 @@ public class TestmyResourceAwareScheduler {
 
         Config config = new Config();
         config.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology1);
+        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology1);
         TopologyDetails topology1 = new TopologyDetails("topology1", config, stormTopology1, 2, executorMap1, 0);
 
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
@@ -379,18 +379,18 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void testScheduleResilience() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(2, 2, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(2, 2, resourceMap);
 
         TopologyBuilder builder1 = new TopologyBuilder();
         builder1.setSpout("wordSpout1", new TestWordSpout(), 3);
         StormTopology stormTopology1 = builder1.createTopology();
         Config config1 = new Config();
         config1.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology1);
+        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology1);
         TopologyDetails topology1 = new TopologyDetails("topology1", config1, stormTopology1, 3, executorMap1, 0);
 
         TopologyBuilder builder2 = new TopologyBuilder();
@@ -400,7 +400,7 @@ public class TestmyResourceAwareScheduler {
         config2.putAll(defaultTopologyConf);
         // memory requirement is large enough so that two executors can not be fully assigned to one node
         config2.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 1280.0);
-        Map<ExecutorDetails, String> executorMap2 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology2);
+        Map<ExecutorDetails, String> executorMap2 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology2);
         TopologyDetails topology2 = new TopologyDetails("topology2", config2, stormTopology2, 2, executorMap2, 0);
 
         // Test1: When a worker fails, RAS does not alter existing assignments on healthy workers
@@ -524,7 +524,7 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void testHeterogeneousCluster() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap1 = new HashMap<>(); // strong supervisor node
         resourceMap1.put(Config.SUPERVISOR_CPU_CAPACITY, 800.0);
         resourceMap1.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 4096.0);
@@ -548,7 +548,7 @@ public class TestmyResourceAwareScheduler {
         StormTopology stormTopology1 = builder1.createTopology();
         Config config1 = new Config();
         config1.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology1);
+        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology1);
         TopologyDetails topology1 = new TopologyDetails("topology1", config1, stormTopology1, 1, executorMap1, 0);
 
         // topo2 has 4 large tasks
@@ -557,7 +557,7 @@ public class TestmyResourceAwareScheduler {
         StormTopology stormTopology2 = builder2.createTopology();
         Config config2 = new Config();
         config2.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap2 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology2);
+        Map<ExecutorDetails, String> executorMap2 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology2);
         TopologyDetails topology2 = new TopologyDetails("topology2", config2, stormTopology2, 1, executorMap2, 0);
 
         // topo3 has 4 large tasks
@@ -566,7 +566,7 @@ public class TestmyResourceAwareScheduler {
         StormTopology stormTopology3 = builder3.createTopology();
         Config config3 = new Config();
         config3.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap3 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology3);
+        Map<ExecutorDetails, String> executorMap3 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology3);
         TopologyDetails topology3 = new TopologyDetails("topology3", config2, stormTopology3, 1, executorMap3, 0);
 
         // topo4 has 12 small tasks, whose mem usage does not exactly divide a node's mem capacity
@@ -575,7 +575,7 @@ public class TestmyResourceAwareScheduler {
         StormTopology stormTopology4 = builder4.createTopology();
         Config config4 = new Config();
         config4.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap4 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology4);
+        Map<ExecutorDetails, String> executorMap4 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology4);
         TopologyDetails topology4 = new TopologyDetails("topology4", config4, stormTopology4, 1, executorMap4, 0);
 
         // topo5 has 40 small tasks, it should be able to exactly use up both the cpu and mem in the cluster
@@ -584,7 +584,7 @@ public class TestmyResourceAwareScheduler {
         StormTopology stormTopology5 = builder5.createTopology();
         Config config5 = new Config();
         config5.putAll(defaultTopologyConf);
-        Map<ExecutorDetails, String> executorMap5 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology5);
+        Map<ExecutorDetails, String> executorMap5 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology5);
         TopologyDetails topology5 = new TopologyDetails("topology5", config5, stormTopology5, 1, executorMap5, 0);
 
         // Test1: Launch topo 1-3 together, it should be able to use up either mem or cpu resource due to exact division
@@ -602,8 +602,8 @@ public class TestmyResourceAwareScheduler {
         Assert.assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology2.getId()));
         Assert.assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology3.getId()));
 
-        Map<SupervisorDetails, Double> superToCpu = TestUtilsFormyResourceAwareScheduler.getSupervisorToCpuUsage(cluster, topologies);
-        Map<SupervisorDetails, Double> superToMem = TestUtilsFormyResourceAwareScheduler.getSupervisorToMemoryUsage(cluster, topologies);
+        Map<SupervisorDetails, Double> superToCpu = TestUtilsFormyScheduler.getSupervisorToCpuUsage(cluster, topologies);
+        Map<SupervisorDetails, Double> superToMem = TestUtilsFormyScheduler.getSupervisorToMemoryUsage(cluster, topologies);
 
         final Double EPSILON = 0.0001;
         for (SupervisorDetails supervisor : supMap.values()) {
@@ -644,8 +644,8 @@ public class TestmyResourceAwareScheduler {
         topologies = new Topologies(topoMap);
         rs.prepare(config1);
         rs.schedule(topologies, cluster);
-        superToCpu = TestUtilsFormyResourceAwareScheduler.getSupervisorToCpuUsage(cluster, topologies);
-        superToMem = TestUtilsFormyResourceAwareScheduler.getSupervisorToMemoryUsage(cluster, topologies);
+        superToCpu = TestUtilsFormyScheduler.getSupervisorToCpuUsage(cluster, topologies);
+        superToMem = TestUtilsFormyScheduler.getSupervisorToMemoryUsage(cluster, topologies);
         for (SupervisorDetails supervisor : supMap.values()) {
             Double cpuAvailable = supervisor.getTotalCPU();
             Double memAvailable = supervisor.getTotalMemory();
@@ -660,11 +660,11 @@ public class TestmyResourceAwareScheduler {
     @Test
     public void testTopologyWorkerMaxHeapSize() {
         // Test1: If RAS spreads executors across multiple workers based on the set limit for a worker used by the topology
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(2, 2, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(2, 2, resourceMap);
 
         TopologyBuilder builder1 = new TopologyBuilder();
         builder1.setSpout("wordSpout1", new TestWordSpout(), 4);
@@ -672,7 +672,7 @@ public class TestmyResourceAwareScheduler {
         Config config1 = new Config();
         config1.putAll(defaultTopologyConf);
         config1.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 128.0);
-        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology1);
+        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology1);
         TopologyDetails topology1 = new TopologyDetails("topology1", config1, stormTopology1, 1, executorMap1, 0);
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config1);
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
@@ -694,7 +694,7 @@ public class TestmyResourceAwareScheduler {
         Config config2 = new Config();
         config2.putAll(defaultTopologyConf);
         config2.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 128.0);
-        Map<ExecutorDetails, String> executorMap2 = TestUtilsFormyResourceAwareScheduler.genExecsAndComps(stormTopology2);
+        Map<ExecutorDetails, String> executorMap2 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology2);
         TopologyDetails topology2 = new TopologyDetails("topology2", config2, stormTopology2, 1, executorMap2, 0);
         cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config2);
         topoMap = new HashMap<>();
@@ -729,11 +729,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void TestSubmitUsersWithNoGuarantees() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<String, Number>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 100.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(4, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(4, 4, resourceMap);
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
         config.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
@@ -753,14 +753,14 @@ public class TestmyResourceAwareScheduler {
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "jerry");
 
-        TopologyDetails topo1 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 1, 0, 1, 0, currentTime - 2, 10);
-        TopologyDetails topo2 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-2", config, 1, 0, 1, 0, currentTime - 2, 20);
-        TopologyDetails topo3 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-3", config, 1, 0, 1, 0, currentTime - 2, 20);
+        TopologyDetails topo1 = TestUtilsFormyScheduler.getTopology("topo-1", config, 1, 0, 1, 0, currentTime - 2, 10);
+        TopologyDetails topo2 = TestUtilsFormyScheduler.getTopology("topo-2", config, 1, 0, 1, 0, currentTime - 2, 20);
+        TopologyDetails topo3 = TestUtilsFormyScheduler.getTopology("topo-3", config, 1, 0, 1, 0, currentTime - 2, 20);
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "bobby");
 
-        TopologyDetails topo4 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-4", config, 1, 0, 1, 0, currentTime - 2, 10);
-        TopologyDetails topo5 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-5", config, 1, 0, 1, 0, currentTime - 2, 20);
+        TopologyDetails topo4 = TestUtilsFormyScheduler.getTopology("topo-4", config, 1, 0, 1, 0, currentTime - 2, 10);
+        TopologyDetails topo5 = TestUtilsFormyScheduler.getTopology("topo-5", config, 1, 0, 1, 0, currentTime - 2, 20);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         topoMap.put(topo1.getId(), topo1);
@@ -777,7 +777,7 @@ public class TestmyResourceAwareScheduler {
         rs.schedule(topologies, cluster);
 
         for (TopologyDetails topo : rs.getUser("jerry").getTopologiesRunning()) {
-            Assert.assertTrue("assert topology success", TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue("assert topology success", TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
         Assert.assertEquals("# of running topologies", 3, rs.getUser("jerry").getTopologiesRunning().size());
         Assert.assertEquals("# of pending topologies", 0, rs.getUser("jerry").getTopologiesPending().size());
@@ -785,7 +785,7 @@ public class TestmyResourceAwareScheduler {
         Assert.assertEquals("# of invalid topologies", 0, rs.getUser("jerry").getTopologiesInvalid().size());
 
         for (TopologyDetails topo : rs.getUser("bobby").getTopologiesRunning()) {
-            Assert.assertTrue("assert topology success", TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue("assert topology success", TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
         Assert.assertEquals("# of running topologies", 1, rs.getUser("bobby").getTopologiesRunning().size());
         Assert.assertEquals("# of pending topologies", 0, rs.getUser("bobby").getTopologiesPending().size());
@@ -795,11 +795,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void TestTopologySortedInCorrectOrder() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<String, Number>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 100.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1024.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(20, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(20, 4, resourceMap);
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
         config.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
@@ -827,11 +827,11 @@ public class TestmyResourceAwareScheduler {
 
         config.put(Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS, resourceUserPool);
 
-        TopologyDetails topo1 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, 20);
-        TopologyDetails topo2 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 30);
-        TopologyDetails topo3 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-3", config, 5, 15, 1, 1, currentTime - 16, 30);
-        TopologyDetails topo4 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-4", config, 5, 15, 1, 1, currentTime - 16, 20);
-        TopologyDetails topo5 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-5", config, 5, 15, 1, 1, currentTime - 24, 30);
+        TopologyDetails topo1 = TestUtilsFormyScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, 20);
+        TopologyDetails topo2 = TestUtilsFormyScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 30);
+        TopologyDetails topo3 = TestUtilsFormyScheduler.getTopology("topo-3", config, 5, 15, 1, 1, currentTime - 16, 30);
+        TopologyDetails topo4 = TestUtilsFormyScheduler.getTopology("topo-4", config, 5, 15, 1, 1, currentTime - 16, 20);
+        TopologyDetails topo5 = TestUtilsFormyScheduler.getTopology("topo-5", config, 5, 15, 1, 1, currentTime - 24, 30);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         topoMap.put(topo1.getId(), topo1);
@@ -876,7 +876,7 @@ public class TestmyResourceAwareScheduler {
         LOG.info("{} - {}", topo.getName(), queue);
         Assert.assertEquals("check order", topo.getName(), "topo-2");
 
-        TopologyDetails topo6 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-6", config, 5, 15, 1, 1, currentTime - 30, 10);
+        TopologyDetails topo6 = TestUtilsFormyScheduler.getTopology("topo-6", config, 5, 15, 1, 1, currentTime - 30, 10);
         topoMap.put(topo6.getId(), topo6);
 
         topologies = new Topologies(topoMap);
@@ -910,11 +910,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void TestMultipleUsers() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<String, Number>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 1000.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1024.0 * 10);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(20, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(20, 4, resourceMap);
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
         config.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
@@ -938,27 +938,27 @@ public class TestmyResourceAwareScheduler {
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "jerry");
 
-        TopologyDetails topo1 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, 20);
-        TopologyDetails topo2 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 29);
-        TopologyDetails topo3 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-3", config, 5, 15, 1, 1, currentTime - 16, 29);
-        TopologyDetails topo4 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-4", config, 5, 15, 1, 1, currentTime - 16, 20);
-        TopologyDetails topo5 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-5", config, 5, 15, 1, 1, currentTime - 24, 29);
+        TopologyDetails topo1 = TestUtilsFormyScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, 20);
+        TopologyDetails topo2 = TestUtilsFormyScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 29);
+        TopologyDetails topo3 = TestUtilsFormyScheduler.getTopology("topo-3", config, 5, 15, 1, 1, currentTime - 16, 29);
+        TopologyDetails topo4 = TestUtilsFormyScheduler.getTopology("topo-4", config, 5, 15, 1, 1, currentTime - 16, 20);
+        TopologyDetails topo5 = TestUtilsFormyScheduler.getTopology("topo-5", config, 5, 15, 1, 1, currentTime - 24, 29);
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "bobby");
 
-        TopologyDetails topo6 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-6", config, 5, 15, 1, 1, currentTime - 2, 20);
-        TopologyDetails topo7 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-7", config, 5, 15, 1, 1, currentTime - 8, 29);
-        TopologyDetails topo8 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-8", config, 5, 15, 1, 1, currentTime - 16, 29);
-        TopologyDetails topo9 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-9", config, 5, 15, 1, 1, currentTime - 16, 20);
-        TopologyDetails topo10 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-10", config, 5, 15, 1, 1, currentTime - 24, 29);
+        TopologyDetails topo6 = TestUtilsFormyScheduler.getTopology("topo-6", config, 5, 15, 1, 1, currentTime - 2, 20);
+        TopologyDetails topo7 = TestUtilsFormyScheduler.getTopology("topo-7", config, 5, 15, 1, 1, currentTime - 8, 29);
+        TopologyDetails topo8 = TestUtilsFormyScheduler.getTopology("topo-8", config, 5, 15, 1, 1, currentTime - 16, 29);
+        TopologyDetails topo9 = TestUtilsFormyScheduler.getTopology("topo-9", config, 5, 15, 1, 1, currentTime - 16, 20);
+        TopologyDetails topo10 = TestUtilsFormyScheduler.getTopology("topo-10", config, 5, 15, 1, 1, currentTime - 24, 29);
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "derek");
 
-        TopologyDetails topo11 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-11", config, 5, 15, 1, 1, currentTime - 2, 20);
-        TopologyDetails topo12 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-12", config, 5, 15, 1, 1, currentTime - 8, 29);
-        TopologyDetails topo13 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-13", config, 5, 15, 1, 1, currentTime - 16, 29);
-        TopologyDetails topo14 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-14", config, 5, 15, 1, 1, currentTime - 16, 20);
-        TopologyDetails topo15 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-15", config, 5, 15, 1, 1, currentTime - 24, 29);
+        TopologyDetails topo11 = TestUtilsFormyScheduler.getTopology("topo-11", config, 5, 15, 1, 1, currentTime - 2, 20);
+        TopologyDetails topo12 = TestUtilsFormyScheduler.getTopology("topo-12", config, 5, 15, 1, 1, currentTime - 8, 29);
+        TopologyDetails topo13 = TestUtilsFormyScheduler.getTopology("topo-13", config, 5, 15, 1, 1, currentTime - 16, 29);
+        TopologyDetails topo14 = TestUtilsFormyScheduler.getTopology("topo-14", config, 5, 15, 1, 1, currentTime - 16, 20);
+        TopologyDetails topo15 = TestUtilsFormyScheduler.getTopology("topo-15", config, 5, 15, 1, 1, currentTime - 24, 29);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         topoMap.put(topo1.getId(), topo1);
@@ -985,7 +985,7 @@ public class TestmyResourceAwareScheduler {
         rs.schedule(topologies, cluster);
 
         for (TopologyDetails topo : topoMap.values()) {
-            Assert.assertTrue(TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue(TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
 
         for (User user : rs.getUserMap().values()) {
@@ -996,11 +996,11 @@ public class TestmyResourceAwareScheduler {
 
     @Test
     public void testHandlingClusterSubscription() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<String, Number>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 200.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1024.0 * 10);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(1, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(1, 4, resourceMap);
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
         config.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
@@ -1024,8 +1024,8 @@ public class TestmyResourceAwareScheduler {
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "jerry");
 
-        TopologyDetails topo1 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, 20);
-        TopologyDetails topo2 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 29);
+        TopologyDetails topo1 = TestUtilsFormyScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, 20);
+        TopologyDetails topo2 = TestUtilsFormyScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 29);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         topoMap.put(topo1.getId(), topo1);
@@ -1040,7 +1040,7 @@ public class TestmyResourceAwareScheduler {
 
         int fullyScheduled = 0;
         for (TopologyDetails topo : topoMap.values()) {
-            if (TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId()))) {
+            if (TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId()))) {
                 fullyScheduled++;
             }
         }
@@ -1056,11 +1056,11 @@ public class TestmyResourceAwareScheduler {
      */
     @Test
     public void TestFaultTolerance() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<String, Number>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 100.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(6, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(6, 4, resourceMap);
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
         config.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
@@ -1087,18 +1087,18 @@ public class TestmyResourceAwareScheduler {
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "jerry");
 
-        TopologyDetails topo1 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 1, 0, 1, 0, currentTime - 2, 20);
-        TopologyDetails topo2 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-2", config, 1, 0, 1, 0, currentTime - 2, 20);
+        TopologyDetails topo1 = TestUtilsFormyScheduler.getTopology("topo-1", config, 1, 0, 1, 0, currentTime - 2, 20);
+        TopologyDetails topo2 = TestUtilsFormyScheduler.getTopology("topo-2", config, 1, 0, 1, 0, currentTime - 2, 20);
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "bobby");
 
-        TopologyDetails topo3 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-3", config, 1, 0, 1, 0, currentTime - 2, 10);
-        TopologyDetails topo4 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-4", config, 1, 0, 1, 0, currentTime - 2, 10);
+        TopologyDetails topo3 = TestUtilsFormyScheduler.getTopology("topo-3", config, 1, 0, 1, 0, currentTime - 2, 10);
+        TopologyDetails topo4 = TestUtilsFormyScheduler.getTopology("topo-4", config, 1, 0, 1, 0, currentTime - 2, 10);
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "derek");
 
-        TopologyDetails topo5 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-5", config, 1, 0, 1, 0, currentTime - 2, 29);
-        TopologyDetails topo6 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-6", config, 1, 0, 1, 0, currentTime - 2, 10);
+        TopologyDetails topo5 = TestUtilsFormyScheduler.getTopology("topo-5", config, 1, 0, 1, 0, currentTime - 2, 29);
+        TopologyDetails topo6 = TestUtilsFormyScheduler.getTopology("topo-6", config, 1, 0, 1, 0, currentTime - 2, 10);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         topoMap.put(topo1.getId(), topo1);
@@ -1116,7 +1116,7 @@ public class TestmyResourceAwareScheduler {
         rs.schedule(topologies, cluster);
 
         for (TopologyDetails topo : rs.getUser("jerry").getTopologiesRunning()) {
-            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
         Assert.assertEquals("# of running topologies", 2, rs.getUser("jerry").getTopologiesRunning().size());
         Assert.assertEquals("# of pending topologies", 0, rs.getUser("jerry").getTopologiesPending().size());
@@ -1124,7 +1124,7 @@ public class TestmyResourceAwareScheduler {
         Assert.assertEquals("# of invalid topologies", 0, rs.getUser("jerry").getTopologiesInvalid().size());
 
         for (TopologyDetails topo : rs.getUser("derek").getTopologiesRunning()) {
-            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
         Assert.assertEquals("# of running topologies", 2, rs.getUser("derek").getTopologiesRunning().size());
         Assert.assertEquals("# of pending topologies", 0, rs.getUser("derek").getTopologiesPending().size());
@@ -1132,7 +1132,7 @@ public class TestmyResourceAwareScheduler {
         Assert.assertEquals("# of invalid topologies", 0, rs.getUser("derek").getTopologiesInvalid().size());
 
         for (TopologyDetails topo : rs.getUser("bobby").getTopologiesRunning()) {
-            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
         Assert.assertEquals("# of running topologies", 2, rs.getUser("bobby").getTopologiesRunning().size());
         Assert.assertEquals("# of pending topologies", 0, rs.getUser("bobby").getTopologiesPending().size());
@@ -1165,7 +1165,7 @@ public class TestmyResourceAwareScheduler {
 
         //Supervisor failed contains a executor from topo-6 of user derek.  Should evict a topology from user jerry since user will be above resource guarantee more so than user derek
         for (TopologyDetails topo : rs.getUser("jerry").getTopologiesRunning()) {
-            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
         Assert.assertEquals("# of running topologies", 1, rs.getUser("jerry").getTopologiesRunning().size());
         Assert.assertEquals("# of pending topologies", 0, rs.getUser("jerry").getTopologiesPending().size());
@@ -1174,7 +1174,7 @@ public class TestmyResourceAwareScheduler {
 
 
         for (TopologyDetails topo : rs.getUser("derek").getTopologiesRunning()) {
-            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
         Assert.assertEquals("# of running topologies", 2, rs.getUser("derek").getTopologiesRunning().size());
         Assert.assertEquals("# of pending topologies", 0, rs.getUser("derek").getTopologiesPending().size());
@@ -1182,7 +1182,7 @@ public class TestmyResourceAwareScheduler {
         Assert.assertEquals("# of invalid topologies", 0, rs.getUser("derek").getTopologiesInvalid().size());
 
         for (TopologyDetails topo : rs.getUser("bobby").getTopologiesRunning()) {
-            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyResourceAwareScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
+            Assert.assertTrue("Assert scheduling topology success", TestUtilsFormyScheduler.assertStatusSuccess(cluster.getStatusMap().get(topo.getId())));
         }
         Assert.assertEquals("# of running topologies", 2, rs.getUser("bobby").getTopologiesRunning().size());
         Assert.assertEquals("# of pending topologies", 0, rs.getUser("bobby").getTopologiesPending().size());
@@ -1195,11 +1195,11 @@ public class TestmyResourceAwareScheduler {
      */
     @Test
     public void TestNodeFreeSlot() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<String, Number>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 100.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(4, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(4, 4, resourceMap);
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
         config.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
@@ -1210,8 +1210,8 @@ public class TestmyResourceAwareScheduler {
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 500);
 
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
-        TopologyDetails topo1 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 1, 0, 2, 0, currentTime - 2, 29);
-        TopologyDetails topo2 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-2", config, 1, 0, 2, 0, currentTime - 2, 10);
+        TopologyDetails topo1 = TestUtilsFormyScheduler.getTopology("topo-1", config, 1, 0, 2, 0, currentTime - 2, 29);
+        TopologyDetails topo2 = TestUtilsFormyScheduler.getTopology("topo-2", config, 1, 0, 2, 0, currentTime - 2, 10);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         topoMap.put(topo1.getId(), topo1);
@@ -1249,11 +1249,11 @@ public class TestmyResourceAwareScheduler {
      */
     @Test
     public void TestSchedulingAfterFailedScheduling() {
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<String, Number>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 100.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(8, 4, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(8, 4, resourceMap);
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
         config.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
@@ -1267,9 +1267,9 @@ public class TestmyResourceAwareScheduler {
 
         config.put(Config.TOPOLOGY_SUBMITTER_USER, "jerry");
 
-        TopologyDetails topo1 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 8, 0, 2, 0, currentTime - 2, 10);
-        TopologyDetails topo2 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-2", config, 2, 0, 2, 0, currentTime - 2, 20);
-        TopologyDetails topo3 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-3", config, 1, 2, 1, 1, currentTime - 2, 20);
+        TopologyDetails topo1 = TestUtilsFormyScheduler.getTopology("topo-1", config, 8, 0, 2, 0, currentTime - 2, 10);
+        TopologyDetails topo2 = TestUtilsFormyScheduler.getTopology("topo-2", config, 2, 0, 2, 0, currentTime - 2, 20);
+        TopologyDetails topo3 = TestUtilsFormyScheduler.getTopology("topo-3", config, 1, 2, 1, 1, currentTime - 2, 20);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         topoMap.put(topo1.getId(), topo1);
@@ -1297,22 +1297,22 @@ public class TestmyResourceAwareScheduler {
 
         TopologyBuilder builder = new TopologyBuilder();
 
-        SpoutDeclarer s1 = builder.setSpout("spout-1", new TestUtilsFormyResourceAwareScheduler.TestSpout(),
+        SpoutDeclarer s1 = builder.setSpout("spout-1", new TestUtilsFormyScheduler.TestSpout(),
                 5);
-        SpoutDeclarer s2 = builder.setSpout("spout-2", new TestUtilsFormyResourceAwareScheduler.TestSpout(),
+        SpoutDeclarer s2 = builder.setSpout("spout-2", new TestUtilsFormyScheduler.TestSpout(),
                 5);
-        BoltDeclarer b1 = builder.setBolt("bolt-1", new TestUtilsFormyResourceAwareScheduler.TestBolt(),
+        BoltDeclarer b1 = builder.setBolt("bolt-1", new TestUtilsFormyScheduler.TestBolt(),
                 5).shuffleGrouping("spout-1").shuffleGrouping("bolt-3");
-        BoltDeclarer b2 = builder.setBolt("bolt-2", new TestUtilsFormyResourceAwareScheduler.TestBolt(),
+        BoltDeclarer b2 = builder.setBolt("bolt-2", new TestUtilsFormyScheduler.TestBolt(),
                 5).shuffleGrouping("bolt-1");
-        BoltDeclarer b3 = builder.setBolt("bolt-3", new TestUtilsFormyResourceAwareScheduler.TestBolt(),
+        BoltDeclarer b3 = builder.setBolt("bolt-3", new TestUtilsFormyScheduler.TestBolt(),
                 5).shuffleGrouping("bolt-2").shuffleGrouping("spout-2");
 
-        INimbus iNimbus = new TestUtilsFormyResourceAwareScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
         Map<String, Number> resourceMap = new HashMap<String, Number>();
         resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 100.0);
         resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1000.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genSupervisors(25, 1, resourceMap);
+        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genSupervisors(25, 1, resourceMap);
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
         config.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());

@@ -43,25 +43,25 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TestUtilsFormyResourceAwareScheduler {
+public class TestUtilsFormyScheduler {
   private static int currentTime = 1450418597;
 
-  private static final Logger LOG = LoggerFactory.getLogger(TestUtilsFormyResourceAwareScheduler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TestUtilsFormyScheduler.class);
 
   public static List<TopologyDetails> getListOfTopologies(Config config) {
 
     List<TopologyDetails> topos = new LinkedList<TopologyDetails>();
 
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, 20));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 30));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-3", config, 5, 15, 1, 1, currentTime - 16, 30));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-4", config, 5, 15, 1, 1, currentTime - 16, 20));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-5", config, 5, 15, 1, 1, currentTime - 24, 30));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-6", config, 5, 15, 1, 1, currentTime - 2, 0));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-7", config, 5, 15, 1, 1, currentTime - 8, 0));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-8", config, 5, 15, 1, 1, currentTime - 16, 15));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-9", config, 5, 15, 1, 1, currentTime - 16, 8));
-    topos.add(TestUtilsFormyResourceAwareScheduler.getTopology("topo-10", config, 5, 15, 1, 1, currentTime - 24, 9));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, 20));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 30));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-3", config, 5, 15, 1, 1, currentTime - 16, 30));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-4", config, 5, 15, 1, 1, currentTime - 16, 20));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-5", config, 5, 15, 1, 1, currentTime - 24, 30));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-6", config, 5, 15, 1, 1, currentTime - 2, 0));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-7", config, 5, 15, 1, 1, currentTime - 8, 0));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-8", config, 5, 15, 1, 1, currentTime - 16, 15));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-9", config, 5, 15, 1, 1, currentTime - 16, 8));
+    topos.add(TestUtilsFormyScheduler.getTopology("topo-10", config, 5, 15, 1, 1, currentTime - 24, 9));
     return topos;
   }
 

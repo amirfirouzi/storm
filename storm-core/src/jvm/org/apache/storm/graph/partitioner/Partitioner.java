@@ -13,7 +13,7 @@ import java.util.Random;
  * Created by amir on 4/15/17.
  */
 public class Partitioner {
-    public static PartitioningResult doPartition(Model model,CostFunction.costMode mode, boolean verbose) throws Exception {
+    public static PartitioningResult doPartition(Model model,CostFunction.costMode mode, boolean verbose) {
         long startTime = System.currentTimeMillis();
 
         //region ACO Parameters

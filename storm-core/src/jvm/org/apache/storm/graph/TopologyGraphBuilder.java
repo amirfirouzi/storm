@@ -24,13 +24,14 @@ import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by amir on 11/21/16.
@@ -51,12 +52,20 @@ public final class TopologyGraphBuilder {
     //Add Vertices for Spouts
     ExecutorEntity currentExecutor;
     int spoutParallelism;
+    Map<String, Double> resources;
     for (Map.Entry<String, SpoutSpec> spout
         : td.getTopology().get_spouts().entrySet()) {
       spoutParallelism = spout.getValue().get_common().get_parallelism_hint();
       for (int i = 1; i <= spoutParallelism; i++) {
         currentExecutor = new ExecutorEntity(spout.getKey(), Integer.toString(i), compToExecsMap.get(spout.getKey()).get(i - 1).toString());
-        g.addVertex(currentExecutor);
+
+        double reqCPU = td.getTotalCpuReqTask(compToExecsMap.get(spout.getKey()).get(i - 1));
+        double reqMEM = td.getTotalMemReqTask(compToExecsMap.get(spout.getKey()).get(i - 1));
+        resources = new HashMap<>();
+        resources.put("cpu", reqCPU);
+        resources.put("mem", reqMEM);
+
+        g.addVertex(currentExecutor, resources);
       }
     }
 
@@ -72,7 +81,12 @@ public final class TopologyGraphBuilder {
 
       for (int i = 1; i <= boltParallelism; i++) {
         currentExecutor = new ExecutorEntity(bolt.getKey(), Integer.toString(i), compToExecsMap.get(bolt.getKey()).get(i - 1).toString());
-        g.addVertex(currentExecutor);
+        resources = new HashMap<>();
+        double reqCPU = td.getTotalCpuReqTask(compToExecsMap.get(bolt.getKey()).get(i - 1));
+        double reqMEM = td.getTotalMemReqTask(compToExecsMap.get(bolt.getKey()).get(i - 1));
+        resources.put("cpu", reqCPU);
+        resources.put("mem", reqMEM);
+        g.addVertex(currentExecutor, resources);
         for (GlobalStreamId input
             : bolt.getValue().get_common().get_inputs().keySet()) {
 
@@ -134,73 +148,74 @@ public final class TopologyGraphBuilder {
   private static int getComponentParallelism(String componentName) {
     return parallelismMap.getOrDefault(componentName, 0);
   }
+
   /**
    * Writes the input data required for METIS and Returns the data as a String
    */
-  public static String generateMetisInputFile(Graph graph, String fileName, boolean fmtVertexSize,
-                                              boolean fmtVertexWeight, boolean fmtEdgeWeight, int ncon) {
-    String fmt = Integer.toString(fmtVertexSize ? 1 : 0)
-        + Integer.toString(fmtVertexWeight ? 1 : 0)
-        + Integer.toString(fmtEdgeWeight ? 1 : 0);
 
-    String stormHome = System.getProperty("user.home") + "/.stormdata";
-    String dir = stormHome + "/output/";
-    String file = dir + fileName;
-
-    File directory = new File(dir);
-    if (!directory.exists()) {
-      directory.mkdirs();
-    }
-
-    StringBuilder line = new StringBuilder();
-    try {
-
-      FileWriter out = new FileWriter(file);
-      Set<Map.Entry<Vertex, TreeSet<Vertex>>> adjListEntries = graph.getAdjList().entrySet();
-
-      //write header info (#v #e fmt ncon)
-      line.append("%------header------\n")
-          .append(graph.numVertices() + " ")
-          .append(graph.numEdges() + " ")
-          .append(fmt + " ")
-          .append(ncon)
-          .append("\n");
-      for (Map.Entry<Vertex, TreeSet<Vertex>> adjListRow
-          : adjListEntries) {
-        Vertex vertex = adjListRow.getKey();
-        TreeSet<Vertex> neighbours = adjListRow.getValue();
-        //write a comment to show the current(i'th) vertex name and it's weights
-        //%--------#VName(#weights)--------
-        line.append("%")
-            .append("--------")
-            .append(vertex.getName())
-            .append(vertex.getWeightsString(ncon))
-            .append("--------" + "\n");
-        //write each line: the weights of current vertex and neighbours + edge weights(if exist)
-        //#weights #neighbour1 #edgeWeight #neighbour2 #edgeWeight ...
-        line.append(graph.getNeighboursOf(vertex, neighbours, fmtEdgeWeight, ncon) + "\n")
-            .append("%" + graph.getNeighbourNamesOf(vertex, neighbours, fmtEdgeWeight) + "\n");
-      }
-
-      line.append("\n%------names------\n");
-      for (Map.Entry<Vertex, TreeSet<Vertex>> row
-          : adjListEntries) {
-        line.append("%")
-            .append(row.getKey().getId())
-            .append("->")
-            .append(row.getKey().getName())
-            .append("\n");
-      }
-
-      out.write(line.toString());
-      out.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-    return line.toString();
-  }
-
+//  public static String generateMetisInputFile(Graph graph, String fileName, boolean fmtVertexSize,
+//                                              boolean fmtVertexWeight, boolean fmtEdgeWeight, int ncon) {
+//    String fmt = Integer.toString(fmtVertexSize ? 1 : 0)
+//        + Integer.toString(fmtVertexWeight ? 1 : 0)
+//        + Integer.toString(fmtEdgeWeight ? 1 : 0);
+//
+//    String stormHome = System.getProperty("user.home") + "/.stormdata";
+//    String dir = stormHome + "/output/";
+//    String file = dir + fileName;
+//
+//    File directory = new File(dir);
+//    if (!directory.exists()) {
+//      directory.mkdirs();
+//    }
+//
+//    StringBuilder line = new StringBuilder();
+//    try {
+//
+//      FileWriter out = new FileWriter(file);
+//      Set<Map.Entry<Vertex, TreeSet<Vertex>>> adjListEntries = graph.getAdjList().entrySet();
+//
+//      //write header info (#v #e fmt ncon)
+//      line.append("%------header------\n")
+//          .append(graph.numVertices() + " ")
+//          .append(graph.numEdges() + " ")
+//          .append(fmt + " ")
+//          .append(ncon)
+//          .append("\n");
+//      for (Map.Entry<Vertex, TreeSet<Vertex>> adjListRow
+//          : adjListEntries) {
+//        Vertex vertex = adjListRow.getKey();
+//        TreeSet<Vertex> neighbours = adjListRow.getValue();
+//        //write a comment to show the current(i'th) vertex name and it's weights
+//        //%--------#VName(#weights)--------
+//        line.append("%")
+//            .append("--------")
+//            .append(vertex.getName())
+//            .append(vertex.getWeightsString(ncon))
+//            .append("--------" + "\n");
+//        //write each line: the weights of current vertex and neighbours + edge weights(if exist)
+//        //#weights #neighbour1 #edgeWeight #neighbour2 #edgeWeight ...
+//        line.append(graph.getNeighboursOf(vertex, neighbours, fmtEdgeWeight, ncon) + "\n")
+//            .append("%" + graph.getNeighbourNamesOf(vertex, neighbours, fmtEdgeWeight) + "\n");
+//      }
+//
+//      line.append("\n%------names------\n");
+//      for (Map.Entry<Vertex, TreeSet<Vertex>> row
+//          : adjListEntries) {
+//        line.append("%")
+//            .append(row.getKey().getId())
+//            .append("->")
+//            .append(row.getKey().getName())
+//            .append("\n");
+//      }
+//
+//      out.write(line.toString());
+//      out.close();
+//    } catch (IOException e) {
+//      e.printStackTrace();
+//    }
+//
+//    return line.toString();
+//  }
   public static String getMetisPartitions(Graph graph, String fileName, int numOfPartitions) {
     //ToDo: check the output and stops execution if errors occured
     String stormHome = System.getProperty("user.home") + "/.stormdata";

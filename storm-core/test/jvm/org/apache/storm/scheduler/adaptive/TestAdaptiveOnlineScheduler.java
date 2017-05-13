@@ -21,8 +21,8 @@ package org.apache.storm.scheduler.adaptive;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.*;
-import org.apache.storm.scheduler.resource.TestUtilsFormyResourceAwareScheduler;
-import org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.TestUtilsFormyScheduler;
+import org.apache.storm.scheduler.resource.strategies.scheduling.myStrategy;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
@@ -66,12 +66,12 @@ public class TestAdaptiveOnlineScheduler {
 
     resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 150.0);
     resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1500.0);
-//        Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genHeterogeneousSupervisors(4, 4, resourceMap);
-    Map<String, SupervisorDetails> supMap = TestUtilsFormyResourceAwareScheduler.genHeterogeneousSupervisors(4, 4);
+//        Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genHeterogeneousSupervisors(4, 4, resourceMap);
+    Map<String, SupervisorDetails> supMap = TestUtilsFormyScheduler.genHeterogeneousSupervisors(4, 4);
     conf.putAll(Utils.readDefaultConfig());
     conf.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
     conf.put(Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy.class.getName());
-    conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, myResourceAwareStrategy.class.getName());
+    conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, myStrategy.class.getName());
     conf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 50.0);
     conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 250);
     conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 250);

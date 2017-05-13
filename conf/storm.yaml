@@ -1,4 +1,4 @@
-storm.scheduler: "org.apache.storm.scheduler.resource.myResourceAwareScheduler"
+storm.scheduler: "org.apache.storm.scheduler.resource.myScheduler"
 traffic.improvement: 50
 reschedule.timeout: 10
 

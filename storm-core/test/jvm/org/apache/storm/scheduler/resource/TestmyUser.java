@@ -42,7 +42,7 @@ public class TestmyUser {
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
 
-        List<TopologyDetails> topos = TestUtilsFormyResourceAwareScheduler.getListOfTopologies(config);
+        List<TopologyDetails> topos = TestUtilsFormyScheduler.getListOfTopologies(config);
         User user1 = new User("user1");
 
         for (TopologyDetails topo : topos) {
@@ -51,7 +51,7 @@ public class TestmyUser {
 
         Assert.assertTrue(user1.getTopologiesPending().size() == topos.size());
 
-        List<String> correctOrder = TestUtilsFormyResourceAwareScheduler.getListOfTopologiesCorrectOrder();
+        List<String> correctOrder = TestUtilsFormyScheduler.getListOfTopologiesCorrectOrder();
         Iterator<String> itr = correctOrder.iterator();
         for (TopologyDetails topo : user1.getTopologiesPending()) {
             Assert.assertEquals("check order", topo.getName(), itr.next());
@@ -64,7 +64,7 @@ public class TestmyUser {
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
 
-        List<TopologyDetails> topos = TestUtilsFormyResourceAwareScheduler.getListOfTopologies(config);
+        List<TopologyDetails> topos = TestUtilsFormyScheduler.getListOfTopologies(config);
         User user1 = new User("user1");
 
         for (TopologyDetails topo : topos) {
@@ -95,7 +95,7 @@ public class TestmyUser {
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 200);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 200);
 
-        TopologyDetails topo1 = TestUtilsFormyResourceAwareScheduler.getTopology("topo-1", config, 1, 1, 2, 1, Time.currentTimeSecs() - 24, 9);
+        TopologyDetails topo1 = TestUtilsFormyScheduler.getTopology("topo-1", config, 1, 1, 2, 1, Time.currentTimeSecs() - 24, 9);
 
         User user1 = new User("user1", resourceGuaranteeMap);
 

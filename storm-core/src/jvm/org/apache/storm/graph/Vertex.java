@@ -17,9 +17,8 @@
  */
 package org.apache.storm.graph;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Vertex implements Comparable<Vertex> {
   /**
@@ -61,7 +60,7 @@ public class Vertex implements Comparable<Vertex> {
   /**
    * weights of vertex
    */
-  private List<String> weights;
+  private Map<String, Double> weights;
 
   public Vertex predecessor; // previous vertex
 
@@ -83,7 +82,17 @@ public class Vertex implements Comparable<Vertex> {
     distance = INFINITY; // start as infinity away
     predecessor = null;
     centrality = 0.0;
-    weights = new ArrayList<String>();
+    weights = new HashMap<String, Double>();
+    ;
+  }
+
+  public Vertex(String v, String execName, Map<String, Double> weights) {
+    name = v;
+    this.execName = execName;
+    distance = INFINITY; // start as infinity away
+    predecessor = null;
+    centrality = 0.0;
+    this.weights = weights;
   }
 
   /**
@@ -96,23 +105,12 @@ public class Vertex implements Comparable<Vertex> {
     return name.hashCode();
   }
 
-  public void addWeights(String[] vertexWeights) {
-    this.weights.addAll(Arrays.asList(vertexWeights));
+  public void addWeights(Map<String, Double> vertexWeights) {
+    this.weights.putAll(vertexWeights);
   }
 
-  public void addWeights(List<String> vertexWeights) {
-    this.weights.addAll(vertexWeights);
-  }
-
-  public List<String> getWeights() {
+  public Map<String, Double> getWeights() {
     return this.weights;
-  }
-
-  public List<String> getWeights(int numOfItems) throws Exception {
-    if (numOfItems > this.getWeights().size()) {
-      throw new Exception("ncon OutOfBoundException");
-    }
-    return this.weights.subList(0, numOfItems);
   }
 
   public String getWeightsString() {
@@ -120,31 +118,12 @@ public class Vertex implements Comparable<Vertex> {
     if (!weights.isEmpty()) {
       vw = "(";
     }
-    for (Object s : this.weights) {
-      vw += s.toString() + ",";
+    for (Map.Entry s : this.weights.entrySet()) {
+      vw += s.getKey() + ": " + s.getValue() + "\n";
     }
-    if (!vw.isEmpty()) {
-      vw = vw.substring(0, vw.length() - 1) + ")";
-    }
-    return vw;
-  }
-
-  public String getWeightsString(int numOfItems) {
-    return this.getWeightsString(numOfItems, true);
-  }
-
-  public String getWeightsString(int numOfItems, boolean punctuation) {
-    String vw = "";
-    if ((!weights.isEmpty()) && punctuation) {
-      vw = "(";
-    }
-    for (Object s : this.weights.subList(0, numOfItems)) {
-      vw += s.toString() + (punctuation ? "," : " ");
-    }
-    if (!vw.isEmpty()) {
-      vw = vw.substring(0, vw.length() - 1)
-          + (((!weights.isEmpty()) && punctuation && (numOfItems > 0)) ? ")" : "");
-    }
+//    if (!vw.isEmpty()) {
+//      vw = vw.substring(0, vw.length() - 1) + ")";
+//    }
     return vw;
   }
 
