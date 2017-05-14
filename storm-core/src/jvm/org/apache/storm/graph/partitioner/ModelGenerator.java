@@ -53,7 +53,7 @@ public class ModelGenerator {
       }
     }
 
-    return getModel1();
+    return new Model(R1,R2,M1,M2,Adjacency);
 
   }
 

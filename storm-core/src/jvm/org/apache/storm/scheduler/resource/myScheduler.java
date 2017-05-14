@@ -21,6 +21,7 @@ package org.apache.storm.scheduler.resource;
 import org.apache.storm.Config;
 import org.apache.storm.graph.Graph;
 import org.apache.storm.graph.TopologyGraphBuilder;
+import org.apache.storm.graph.Vertex;
 import org.apache.storm.graph.partitioner.*;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
@@ -114,6 +115,7 @@ public class myScheduler implements IScheduler {
     //region GraphPartitioning
     Graph graph = TopologyGraphBuilder.buildGraph(td);
     RAS_Nodes nodes = schedulingState.nodes;
+    RAS_Node node=nodes.getNodeById("0");
     ModelGenerator mg = new ModelGenerator();
     Model model = null;
     try {
@@ -122,6 +124,18 @@ public class myScheduler implements IScheduler {
       e.printStackTrace();
     }
     PartitioningResult partitioning = Partitioner.doPartition(model, CostFunction.costMode.BestCut, true);
+    Map<Integer,Partition> partitions = new LinkedHashMap<>();
+//    for (int i = 0; i < partitioning.getBestSelection().length; i++) {
+//      if (partitions.get(i)!=null){
+//
+//      }
+//      else{
+//        partitions.put(i,new Partition(nodes.getNodeById()))
+//      }
+//
+//    }
+
+
     //endregion
 
     User topologySubmitter = this.schedulingState.userMap.get(td.getTopologySubmitter());

@@ -66,7 +66,7 @@ public class TestMyScheduler {
     resourceMap1.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 4096.0);
     Map<String, Number> resourceMap2 = new HashMap<>(); // weak supervisor node
     resourceMap2.put(Config.SUPERVISOR_CPU_CAPACITY, 500.0);
-    resourceMap2.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
+    resourceMap2.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1500.0);
 
     Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
     for (int i = 0; i < 2; i++) {
