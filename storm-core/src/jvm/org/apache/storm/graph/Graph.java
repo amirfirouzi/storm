@@ -18,8 +18,6 @@
 package org.apache.storm.graph;
 
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.TreeSet;
 
 public class Graph {
@@ -28,6 +26,8 @@ public class Graph {
   private LinkedHashMap<String, Vertex> vertices;
   private LinkedHashMap<Integer, String> verticesIds;
   private LinkedHashMap<String, String> execsTovertices;
+
+
   private LinkedHashMap<String, Edge> edges;
   private int numOfVertices;
   private int numOfEdges;
@@ -64,7 +64,7 @@ public class Graph {
     return v;
   }
 
-  public Vertex addVertex(ExecutorEntity exec, Map<String,Double> weights) {
+  public Vertex addVertex(ExecutorEntity exec, Resource weights) {
     Vertex v;
     String name = exec.getComponentyName() + "-" + exec.getInstanceId();
     v = vertices.get(name);
@@ -175,6 +175,10 @@ public class Graph {
       str += "\n";
     }
     return str;
+  }
+
+  public TreeSet<Vertex> getNeighbours(Vertex vertex) {
+    return adjList.get(vertex);
   }
 
   public String getNeighboursOf(Vertex currentVertex, TreeSet<Vertex> neighbours,

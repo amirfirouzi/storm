@@ -52,20 +52,20 @@ public final class TopologyGraphBuilder {
     //Add Vertices for Spouts
     ExecutorEntity currentExecutor;
     int spoutParallelism;
-    Map<String, Double> resources;
+    Resource resource = new Resource();
     for (Map.Entry<String, SpoutSpec> spout
         : td.getTopology().get_spouts().entrySet()) {
       spoutParallelism = spout.getValue().get_common().get_parallelism_hint();
       for (int i = 1; i <= spoutParallelism; i++) {
         currentExecutor = new ExecutorEntity(spout.getKey(), Integer.toString(i), compToExecsMap.get(spout.getKey()).get(i - 1).toString());
 
-        double reqCPU = td.getTotalCpuReqTask(compToExecsMap.get(spout.getKey()).get(i - 1));
-        double reqMEM = td.getTotalMemReqTask(compToExecsMap.get(spout.getKey()).get(i - 1));
-        resources = new HashMap<>();
-        resources.put("cpu", reqCPU);
-        resources.put("mem", reqMEM);
+        int reqCPU = td.getTotalCpuReqTask(compToExecsMap.get(spout.getKey()).get(i - 1)).intValue();
+        int reqMEM = td.getTotalMemReqTask(compToExecsMap.get(spout.getKey()).get(i - 1)).intValue();
 
-        g.addVertex(currentExecutor, resources);
+        resource.setCpu(reqCPU);
+        resource.setMemory(reqMEM);
+
+        g.addVertex(currentExecutor, resource);
       }
     }
 
@@ -81,12 +81,12 @@ public final class TopologyGraphBuilder {
 
       for (int i = 1; i <= boltParallelism; i++) {
         currentExecutor = new ExecutorEntity(bolt.getKey(), Integer.toString(i), compToExecsMap.get(bolt.getKey()).get(i - 1).toString());
-        resources = new HashMap<>();
-        double reqCPU = td.getTotalCpuReqTask(compToExecsMap.get(bolt.getKey()).get(i - 1));
-        double reqMEM = td.getTotalMemReqTask(compToExecsMap.get(bolt.getKey()).get(i - 1));
-        resources.put("cpu", reqCPU);
-        resources.put("mem", reqMEM);
-        g.addVertex(currentExecutor, resources);
+        resource = new Resource();
+        int reqCPU = td.getTotalCpuReqTask(compToExecsMap.get(bolt.getKey()).get(i - 1)).intValue();
+        int reqMEM = td.getTotalMemReqTask(compToExecsMap.get(bolt.getKey()).get(i - 1)).intValue();
+        resource.setCpu(reqCPU);
+        resource.setMemory(reqMEM);
+        g.addVertex(currentExecutor, resource);
         for (GlobalStreamId input
             : bolt.getValue().get_common().get_inputs().keySet()) {
 

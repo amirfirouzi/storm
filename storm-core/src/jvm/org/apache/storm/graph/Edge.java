@@ -28,13 +28,13 @@ public class Edge {
 
   private String dest;
 
-  private String weight;
+  private int weight;
 
   public Edge(String src, String dest) {
     this.src = src;
     this.dest = dest;
     this.name = src + ">" + dest;
-    weight = "";
+    weight = -1;
   }
 
   public String getName() {
@@ -61,11 +61,11 @@ public class Edge {
     this.dest = dest;
   }
 
-  public void setWeight(String edgeWeights) {
+  public void setWeight(int edgeWeights) {
     this.weight = edgeWeights;
   }
 
-  public String getWeight() {
+  public int getWeight() {
     return weight;
   }
 
@@ -75,8 +75,8 @@ public class Edge {
 
   public String getWeightString(boolean punctuation) {
     String ew = "";
-    if (!weight.isEmpty()) {
-      ew = (punctuation ? "-(" : "") + this.weight.toString() + (punctuation ? ")" : "");
+    if (weight!=-1) {
+      ew = (punctuation ? "-(" : "") + this.weight + (punctuation ? ")" : "");
     }
     return ew;
   }

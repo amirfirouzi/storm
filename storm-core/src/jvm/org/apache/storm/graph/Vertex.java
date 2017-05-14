@@ -17,9 +17,6 @@
  */
 package org.apache.storm.graph;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class Vertex implements Comparable<Vertex> {
   /**
    * label for Vertex
@@ -27,6 +24,20 @@ public class Vertex implements Comparable<Vertex> {
   private String name;
   private String execName;
   private int id;
+  private Resource weights;
+  /**
+   * a measure of the structural importance of a vertex.
+   * The value should initially be set to zero. A higher
+   * centrality score should mean a Vertex is more central.
+   */
+  private double centrality;
+  public Vertex predecessor; // previous vertex
+  /**
+   * Infinite distance indicates that there is no path
+   * from the source to this vertex
+   */
+  public static final int INFINITY = Integer.MAX_VALUE;
+  public int distance;
 
   public String getName() {
     return name;
@@ -52,41 +63,17 @@ public class Vertex implements Comparable<Vertex> {
     this.execName = execName;
   }
 
-  /**
-   * length of shortest path from source
-   */
-  public int distance;
-
-  /**
-   * weights of vertex
-   */
-  private Map<String, Double> weights;
-
-  public Vertex predecessor; // previous vertex
-
-  /**
-   * a measure of the structural importance of a vertex.
-   * The value should initially be set to zero. A higher
-   * centrality score should mean a Vertex is more central.
-   */
-  private double centrality;
-  /**
-   * Infinite distance indicates that there is no path
-   * from the source to this vertex
-   */
-  public static final int INFINITY = Integer.MAX_VALUE;
-
   public Vertex(String v, String execName) {
     name = v;
     this.execName = execName;
     distance = INFINITY; // start as infinity away
     predecessor = null;
     centrality = 0.0;
-    weights = new HashMap<String, Double>();
+    weights = null;
     ;
   }
 
-  public Vertex(String v, String execName, Map<String, Double> weights) {
+  public Vertex(String v, String execName, Resource weights) {
     name = v;
     this.execName = execName;
     distance = INFINITY; // start as infinity away
@@ -105,25 +92,21 @@ public class Vertex implements Comparable<Vertex> {
     return name.hashCode();
   }
 
-  public void addWeights(Map<String, Double> vertexWeights) {
-    this.weights.putAll(vertexWeights);
+  public void addWeights(Resource vertexWeights) {
+    this.weights = vertexWeights;
   }
 
-  public Map<String, Double> getWeights() {
+  public Resource getWeights() {
     return this.weights;
   }
 
   public String getWeightsString() {
     String vw = "";
-    if (!weights.isEmpty()) {
-      vw = "(";
+    if (weights!=null) {
+      vw += "CPU: " + this.weights.getCpu()
+          + "\n "
+          +"MEM: " + this.weights.getMemory();
     }
-    for (Map.Entry s : this.weights.entrySet()) {
-      vw += s.getKey() + ": " + s.getValue() + "\n";
-    }
-//    if (!vw.isEmpty()) {
-//      vw = vw.substring(0, vw.length() - 1) + ")";
-//    }
     return vw;
   }
 

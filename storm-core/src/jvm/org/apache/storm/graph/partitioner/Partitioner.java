@@ -17,7 +17,7 @@ public class Partitioner {
         long startTime = System.currentTimeMillis();
 
         //region ACO Parameters
-        int maxIt = 200;      // Maximum Number of Iterations
+        int maxIt = 100;      // Maximum Number of Iterations
         int nAnt = 50;        // Number of Ants (Population Size)
         int Q = 1;
 
