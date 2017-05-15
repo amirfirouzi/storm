@@ -115,7 +115,12 @@ public class myScheduler implements IScheduler {
     //region GraphPartitioning
     Graph graph = TopologyGraphBuilder.buildGraph(td);
     RAS_Nodes nodes = schedulingState.nodes;
-    RAS_Node node=nodes.getNodeById("0");
+    Map<Integer, RAS_Node> nodeWithIds = new LinkedHashMap<>();
+    int i = 0;
+    for (RAS_Node node :
+        nodes.getNodes()) {
+      nodeWithIds.put(i++, node);
+    }
     ModelGenerator mg = new ModelGenerator();
     Model model = null;
     try {
@@ -124,18 +129,19 @@ public class myScheduler implements IScheduler {
       e.printStackTrace();
     }
     PartitioningResult partitioning = Partitioner.doPartition(model, CostFunction.costMode.BestCut, true);
-    Map<Integer,Partition> partitions = new LinkedHashMap<>();
-//    for (int i = 0; i < partitioning.getBestSelection().length; i++) {
-//      if (partitions.get(i)!=null){
-//
-//      }
-//      else{
-//        partitions.put(i,new Partition(nodes.getNodeById()))
-//      }
-//
-//    }
-
-
+    Map<Integer, Partition> partitions = new LinkedHashMap<>();
+    for (i = 0; i < partitioning.getBestSelection().length; i++) {
+      int nodeId = partitioning.getBestSelection()[i];
+      int taskId=i+1;
+      if (partitions.get(nodeId) != null) {
+        partitions.get(nodeId).getVertices().add(graph.getVertex(taskId));
+      } else {
+        List<Vertex> vertices = new ArrayList<>();
+        vertices.add(graph.getVertex(taskId));
+        Partition p = new Partition(nodeWithIds.get(nodeId), vertices, partitioning.getBestLoadR1().get(nodeId), partitioning.getBestLoadR2().get(nodeId));
+        partitions.put(nodeId, p);
+      }
+    }
     //endregion
 
     User topologySubmitter = this.schedulingState.userMap.get(td.getTopologySubmitter());
