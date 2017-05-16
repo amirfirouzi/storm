@@ -121,7 +121,8 @@ public class myStrategy implements IStrategy {
       schedulerAssignmentMap.get(targetSlot).add(exec);
       targetNode.consumeResourcesforTask(exec, td);
       scheduledTasks.add(exec);
-      LOG.debug("TASK {} assigned to Node: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on slot: {} on Rack: {}", exec,
+      LOG.info("TASK {}:{} assigned to Node: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on slot: {} on Rack: {}", exec,td.getExecutorToComponent().get(exec),
+
           targetNode.getHostname(), targetNode.getAvailableMemoryResources(),
           targetNode.getAvailableCpuResources(), targetNode.getTotalMemoryResources(),
           targetNode.getTotalCpuResources(), targetSlot, nodeToRack(targetNode));
