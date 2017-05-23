@@ -27,7 +27,7 @@ import org.apache.storm.scheduler.resource.SchedulingState;
  * An interface to for implementing different scheduling strategies for the resource aware scheduling
  * In the future stategies will be pluggable
  */
-public interface IStrategy {
+public interface IStrategyPartitioning {
 
     /**
      * initialize prior to scheduling
@@ -45,7 +45,7 @@ public interface IStrategy {
      * PLEASE NOTE: Any other operations done on the cluster from a scheduling strategy will NOT persist or be realized.
      * The data structures passed in can be used in any way necessary to assist in calculating a scheduling, but will NOT actually change the state of the cluster.
      */
-    SchedulingResult schedule(TopologyDetails td);
+//    SchedulingResult schedule(TopologyDetails td);
 
     SchedulingResult schedule(TopologyDetails td, PartitioningResult partitioning);
 }

@@ -38,120 +38,126 @@ import java.util.Map;
  */
 public final class TopologyGraphBuilder {
 
-  private static Map<String, Integer> parallelismMap = new HashMap<>();
+    private static Map<String, Integer> parallelismMap = new HashMap<>();
 
-  private TopologyGraphBuilder() {
-    //not called
-  }
-
-  public static Graph buildGraph(TopologyDetails td) {
-    calculateParallelismMap(td);
-
-    Map<String, List<ExecutorDetails>> compToExecsMap = reverseExecstoCompMap(td);
-    Graph g = new Graph();
-    //Add Vertices for Spouts
-    ExecutorEntity currentExecutor;
-    int spoutParallelism;
-    Resource resource = new Resource();
-    for (Map.Entry<String, SpoutSpec> spout
-        : td.getTopology().get_spouts().entrySet()) {
-      spoutParallelism = spout.getValue().get_common().get_parallelism_hint();
-      for (int i = 1; i <= spoutParallelism; i++) {
-        currentExecutor = new ExecutorEntity(spout.getKey(), Integer.toString(i), compToExecsMap.get(spout.getKey()).get(i - 1).toString());
-
-        int reqCPU = td.getTotalCpuReqTask(compToExecsMap.get(spout.getKey()).get(i - 1)).intValue();
-        int reqMEM = td.getTotalMemReqTask(compToExecsMap.get(spout.getKey()).get(i - 1)).intValue();
-
-        resource.setCpu(reqCPU);
-        resource.setMemory(reqMEM);
-
-        g.addVertex(currentExecutor, resource);
-      }
+    private TopologyGraphBuilder() {
+        //not called
     }
 
-    ExecutorEntity fromExecutor;
-    int boltParallelism;
-    List<String> compExecs = new ArrayList<>();
-    //Add Vertices for Bolts, then Add Edges Between Components(spouts->bolts and bolts->bolts)
-    //and their sub-tasks(considering number of instances)
-    for (Map.Entry<String, Bolt> bolt
-        : td.getTopology().get_bolts().entrySet()) {
-      boltParallelism = bolt.getValue().get_common().get_parallelism_hint();
+    public static Graph buildGraph(TopologyDetails td) {
+        calculateParallelismMap(td);
 
+        Map<String, List<ExecutorDetails>> compToExecsMap = reverseExecstoCompMap(td);
+        Graph g = new Graph();
+        //Add Vertices for Spouts
+        ExecutorEntity currentExecutor;
+        ExecutorDetails exec;
+        int spoutParallelism;
+        Resource resource = new Resource();
+        for (Map.Entry<String, SpoutSpec> spout
+                : td.getTopology().get_spouts().entrySet()) {
+            spoutParallelism = spout.getValue().get_common().get_parallelism_hint();
+            for (int i = 1; i <= spoutParallelism; i++) {
+                exec = compToExecsMap.get(spout.getKey()).get(i - 1);
+                currentExecutor = new ExecutorEntity(spout.getKey(), Integer.toString(i), exec);
 
-      for (int i = 1; i <= boltParallelism; i++) {
-        currentExecutor = new ExecutorEntity(bolt.getKey(), Integer.toString(i), compToExecsMap.get(bolt.getKey()).get(i - 1).toString());
-        resource = new Resource();
-        int reqCPU = td.getTotalCpuReqTask(compToExecsMap.get(bolt.getKey()).get(i - 1)).intValue();
-        int reqMEM = td.getTotalMemReqTask(compToExecsMap.get(bolt.getKey()).get(i - 1)).intValue();
-        resource.setCpu(reqCPU);
-        resource.setMemory(reqMEM);
-        g.addVertex(currentExecutor, resource);
-        for (GlobalStreamId input
-            : bolt.getValue().get_common().get_inputs().keySet()) {
+                int reqCPU = td.getTotalCpuReqTask(exec).intValue();
+                int reqMEM = td.getTotalMemReqTask(exec).intValue();
 
-          int sourceParallelism = getComponentParallelism(input.get_componentId());
-          for (int j = 1; j <= sourceParallelism; j++) {
-            fromExecutor = new ExecutorEntity(input.get_componentId(),
-                Integer.toString(j),
-                compToExecsMap.get(input.get_componentId()).get(j - 1).toString());
-            g.addEdge(fromExecutor, currentExecutor);
-          }
+                resource.setCpu(reqCPU);
+                resource.setMemory(reqMEM);
+
+                g.addVertex(currentExecutor, resource);
+                g.addExecutor(exec);
+            }
         }
-      }
-    }
 
-    return g;
-    //generateMetisInputFile(g, "metis", false, false, false, 0);
+        ExecutorEntity fromExecutor;
+        int boltParallelism;
+        List<String> compExecs = new ArrayList<>();
+        //Add Vertices for Bolts, then Add Edges Between Components(spouts->bolts and bolts->bolts)
+        //and their sub-tasks(considering number of instances)
+        for (Map.Entry<String, Bolt> bolt
+                : td.getTopology().get_bolts().entrySet()) {
+            boltParallelism = bolt.getValue().get_common().get_parallelism_hint();
+
+
+            for (int i = 1; i <= boltParallelism; i++) {
+                exec = compToExecsMap.get(bolt.getKey()).get(i - 1);
+                currentExecutor = new ExecutorEntity(bolt.getKey(), Integer.toString(i), exec);
+
+                resource = new Resource();
+                int reqCPU = td.getTotalCpuReqTask(exec).intValue();
+                int reqMEM = td.getTotalMemReqTask(exec).intValue();
+                resource.setCpu(reqCPU);
+                resource.setMemory(reqMEM);
+                g.addVertex(currentExecutor, resource);
+                g.addExecutor(exec);
+                for (GlobalStreamId input
+                        : bolt.getValue().get_common().get_inputs().keySet()) {
+
+                    int sourceParallelism = getComponentParallelism(input.get_componentId());
+                    for (int j = 1; j <= sourceParallelism; j++) {
+                        fromExecutor = new ExecutorEntity(input.get_componentId(),
+                                Integer.toString(j),
+                                compToExecsMap.get(input.get_componentId()).get(j - 1));
+                        g.addEdge(fromExecutor, currentExecutor);
+                    }
+                }
+            }
+        }
+
+        return g;
+        //generateMetisInputFile(g, "metis", false, false, false, 0);
 //    int numOfPartitions = 3;
-    //getMetisPartitions(g, "metis", numOfPartitions);
-  }
-
-  private static Map<String, List<ExecutorDetails>> reverseExecstoCompMap(TopologyDetails td) {
-    Map<String, List<ExecutorDetails>> compToExecsMap = new HashMap<>();
-    for (Map.Entry<ExecutorDetails, String> exec :
-        td.getExecutorToComponent().entrySet()) {
-      if (compToExecsMap.containsKey(exec.getValue())) {
-        compToExecsMap.get(exec.getValue().toString()).add(exec.getKey());
-      } else {
-        compToExecsMap.put(exec.getValue(), new ArrayList<>());
-        compToExecsMap.get(exec.getValue()).add(exec.getKey());
-      }
-    }
-    return compToExecsMap;
-  }
-
-  private static List<String> getExecsOfComponent(TopologyDetails td, String compName) {
-
-    List<String> compExecs = new ArrayList<>();
-    for (ExecutorDetails exec :
-        td.getExecutorToComponent().keySet()) {
-      if (td.getExecutorToComponent().get(exec).equalsIgnoreCase(compName)) {
-        compExecs.add(exec.toString());
-      }
-    }
-    return compExecs;
-  }
-
-  private static void calculateParallelismMap(TopologyDetails td) {
-    for (Map.Entry<String, SpoutSpec> spout
-        : td.getTopology().get_spouts().entrySet()) {
-      parallelismMap.put(spout.getKey(), spout.getValue().get_common().get_parallelism_hint());
+        //getMetisPartitions(g, "metis", numOfPartitions);
     }
 
-    for (Map.Entry<String, Bolt> bolt
-        : td.getTopology().get_bolts().entrySet()) {
-      parallelismMap.put(bolt.getKey(), bolt.getValue().get_common().get_parallelism_hint());
+    private static Map<String, List<ExecutorDetails>> reverseExecstoCompMap(TopologyDetails td) {
+        Map<String, List<ExecutorDetails>> compToExecsMap = new HashMap<>();
+        for (Map.Entry<ExecutorDetails, String> exec :
+                td.getExecutorToComponent().entrySet()) {
+            if (compToExecsMap.containsKey(exec.getValue())) {
+                compToExecsMap.get(exec.getValue().toString()).add(exec.getKey());
+            } else {
+                compToExecsMap.put(exec.getValue(), new ArrayList<>());
+                compToExecsMap.get(exec.getValue()).add(exec.getKey());
+            }
+        }
+        return compToExecsMap;
     }
-  }
 
-  private static int getComponentParallelism(String componentName) {
-    return parallelismMap.getOrDefault(componentName, 0);
-  }
+    private static List<String> getExecsOfComponent(TopologyDetails td, String compName) {
 
-  /**
-   * Writes the input data required for METIS and Returns the data as a String
-   */
+        List<String> compExecs = new ArrayList<>();
+        for (ExecutorDetails exec :
+                td.getExecutorToComponent().keySet()) {
+            if (td.getExecutorToComponent().get(exec).equalsIgnoreCase(compName)) {
+                compExecs.add(exec.toString());
+            }
+        }
+        return compExecs;
+    }
+
+    private static void calculateParallelismMap(TopologyDetails td) {
+        for (Map.Entry<String, SpoutSpec> spout
+                : td.getTopology().get_spouts().entrySet()) {
+            parallelismMap.put(spout.getKey(), spout.getValue().get_common().get_parallelism_hint());
+        }
+
+        for (Map.Entry<String, Bolt> bolt
+                : td.getTopology().get_bolts().entrySet()) {
+            parallelismMap.put(bolt.getKey(), bolt.getValue().get_common().get_parallelism_hint());
+        }
+    }
+
+    private static int getComponentParallelism(String componentName) {
+        return parallelismMap.getOrDefault(componentName, 0);
+    }
+
+    /**
+     * Writes the input data required for METIS and Returns the data as a String
+     */
 
 //  public static String generateMetisInputFile(Graph graph, String fileName, boolean fmtVertexSize,
 //                                              boolean fmtVertexWeight, boolean fmtEdgeWeight, int ncon) {
@@ -216,73 +222,73 @@ public final class TopologyGraphBuilder {
 //
 //    return line.toString();
 //  }
-  public static String getMetisPartitions(Graph graph, String fileName, int numOfPartitions) {
-    //ToDo: check the output and stops execution if errors occured
-    String stormHome = System.getProperty("user.home") + "/.stormdata";
-    String dir = stormHome + "/output/";
-    String metisInputFile = dir + fileName;
-    String metisOutputFile = dir + fileName + ".part." + numOfPartitions;
+    public static String getMetisPartitions(Graph graph, String fileName, int numOfPartitions) {
+        //ToDo: check the output and stops execution if errors occured
+        String stormHome = System.getProperty("user.home") + "/.stormdata";
+        String dir = stormHome + "/output/";
+        String metisInputFile = dir + fileName;
+        String metisOutputFile = dir + fileName + ".part." + numOfPartitions;
 
-    List<Integer> metisOutput = new ArrayList<>();
-    //String metisOutput = "";
-    try {
-      callMetis(numOfPartitions, metisInputFile);
-      metisOutput = readFileList(metisOutputFile, Charset.defaultCharset());
-    } catch (IOException e) {
-      e.printStackTrace();
+        List<Integer> metisOutput = new ArrayList<>();
+        //String metisOutput = "";
+        try {
+            callMetis(numOfPartitions, metisInputFile);
+            metisOutput = readFileList(metisOutputFile, Charset.defaultCharset());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        List<Integer> items = new ArrayList<Integer>();
+        HashMap<Integer, List<Vertex>> partitions = new HashMap<>();
+        //need newPartitions because items in metisOutput list may be non contiguous
+        int newPartitions = 0;
+
+        for (int i = 0; i < metisOutput.size(); i++) {
+            if (!items.contains(metisOutput.get(i))) {
+                int index = ++newPartitions;
+                items.add(metisOutput.get(i));
+                List<Vertex> partitionVertices = new ArrayList<>();
+                partitionVertices.add(graph.getVertex(i + 1));
+                partitions.put(index, partitionVertices);
+            } else {
+                int index = items.indexOf(metisOutput.get(i)) + 1;
+                partitions.get(index).add(graph.getVertex(i + 1));
+            }
+        }
+        return metisOutputFile;
     }
 
-    List<Integer> items = new ArrayList<Integer>();
-    HashMap<Integer, List<Vertex>> partitions = new HashMap<>();
-    //need newPartitions because items in metisOutput list may be non contiguous
-    int newPartitions = 0;
 
-    for (int i = 0; i < metisOutput.size(); i++) {
-      if (!items.contains(metisOutput.get(i))) {
-        int index = ++newPartitions;
-        items.add(metisOutput.get(i));
-        List<Vertex> partitionVertices = new ArrayList<>();
-        partitionVertices.add(graph.getVertex(i + 1));
-        partitions.put(index, partitionVertices);
-      } else {
-        int index = items.indexOf(metisOutput.get(i)) + 1;
-        partitions.get(index).add(graph.getVertex(i + 1));
-      }
+    private static boolean callMetis(int numOfPartitions, String fileName) {
+        //ToDo: read output and check for errors
+        try {
+            Process p = Runtime.getRuntime().exec(new String[]{"bash", "-c", "gpmetis " + fileName + " " + numOfPartitions});
+            int retValue = p.waitFor();
+            return (retValue == 0);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
-    return metisOutputFile;
-  }
 
-
-  private static boolean callMetis(int numOfPartitions, String fileName) {
-    //ToDo: read output and check for errors
-    try {
-      Process p = Runtime.getRuntime().exec(new String[]{"bash", "-c", "gpmetis " + fileName + " " + numOfPartitions});
-      int retValue = p.waitFor();
-      return (retValue == 0);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return false;
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-      return false;
+    private static String readFileString(String path, Charset encoding)
+            throws IOException {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, encoding);
     }
-  }
 
-  private static String readFileString(String path, Charset encoding)
-      throws IOException {
-    byte[] encoded = Files.readAllBytes(Paths.get(path));
-    return new String(encoded, encoding);
-  }
-
-  private static List<Integer> readFileList(String path, Charset encoding)
-      throws IOException {
-    List<Integer> numbers = new ArrayList<>();
-    for (String line : Files.readAllLines(Paths.get(path))) {
-      for (String part : line.split("\\s+")) {
-        Integer i = Integer.valueOf(part);
-        numbers.add(i);
-      }
+    private static List<Integer> readFileList(String path, Charset encoding)
+            throws IOException {
+        List<Integer> numbers = new ArrayList<>();
+        for (String line : Files.readAllLines(Paths.get(path))) {
+            for (String part : line.split("\\s+")) {
+                Integer i = Integer.valueOf(part);
+                numbers.add(i);
+            }
+        }
+        return numbers;
     }
-    return numbers;
-  }
 }

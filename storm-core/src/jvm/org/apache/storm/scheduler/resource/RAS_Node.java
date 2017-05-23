@@ -360,7 +360,7 @@ public class RAS_Node {
     public String toString() {
         return "{Node: " + ((_sup == null) ? "null (possibly down)" : _sup.getHost())
                 + ", Avail [ Mem: " + ((_availMemory == null) ? "N/A" : _availMemory.toString())
-                + ", CPU: " + ((_availCPU == null) ? "N/A" : _availCPU.toString()) + ", Slots: " + this.getFreeSlots()
+                + ", CPU: " + ((_availCPU == null) ? "N/A" : _availCPU.toString()) + ", FreeSlots: " + this.getFreeSlots()
                 + "] Total [ Mem: " + ((_sup == null) ? "N/A" : this.getTotalMemoryResources())
                 + ", CPU: " + ((_sup == null) ? "N/A" : this.getTotalCpuResources()) + ", Slots: "
                 + this._slots.values() + " ]}";

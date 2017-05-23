@@ -19,7 +19,7 @@ public class CostFunction {
 
     public enum costMode {
         //ToDo: add more modes and write code to effect the behaviour of CostFunction
-        BestCut, LoadBalanced;
+        BestCut, LoadBalanced, Both
     }
 
     public CostResult CalculateCost(int[] selection, costMode mode) {
@@ -28,7 +28,7 @@ public class CostFunction {
         float LTR2 = 0.9f;
 
         int crosscut = 0;
-        float violation = 0;
+        float capacityViolation = 0;
         this.selection = selection;
         this.partitions = new HashMap();
         //List<Integer> internal = new ArrayList();
@@ -44,14 +44,15 @@ public class CostFunction {
                 //internal.add(InternalCommunication(partitionTasks, model.getAdjacency()));
                 loadR1.add(InternalLoad(partitionTasks, model.getR1()));
                 loadR2.add(InternalLoad(partitionTasks, model.getR2()));
-                crosscut += ExternalCommunication(partitionTasks, model.getAdjacency());
+                if (mode != costMode.LoadBalanced)
+                    crosscut += ExternalCommunication(partitionTasks, model.getAdjacency());
 
                 //Add to Cost if selection violates the usage of Resources(more that capacity)
                 if (loadR1.get(i) > capacityR1[i] * LTR1) {
-                    violation += ((loadR1.get(i) / (capacityR1[i] * LTR1)) - 1) * 100;
+                    capacityViolation += ((loadR1.get(i) / (capacityR1[i] * LTR1)) - 1) * 100;
                 }
                 if (loadR2.get(i) > capacityR2[i] * LTR2) {
-                    violation += ((loadR2.get(i) / (capacityR2[i] * LTR2)) - 1) * 100;
+                    capacityViolation += ((loadR2.get(i) / (capacityR2[i] * LTR2)) - 1) * 100;
                 }
             } else {
                 //internal.add(0);
@@ -60,23 +61,48 @@ public class CostFunction {
             }
         }
 
-        for (int i = 0; i < model.getnMachines(); i++) {
-            List<Integer> loadDiffR1 = new ArrayList();
-            List<Integer> loadDiffR2 = new ArrayList();
 
+        //ToDo: Consider effect of disconnected Vertices in partitions
+
+        //Calculate load balancing violations
+        double balancingViolationR1 = 0;
+        double balancingViolationR2 = 0;
+
+        if (mode != costMode.BestCut) {
+            double avgLoadR1 = 0;
+            double avgLoadR2 = 0;
+            for (int i = 0; i < model.getnMachines(); i++) {
+                avgLoadR1 += loadR1.get(i);
+                avgLoadR2 += loadR2.get(i);
+            }
+            avgLoadR1 = avgLoadR1 / model.getnMachines();
+            avgLoadR2 = avgLoadR2 / model.getnMachines();
+
+
+            for (int i = 0; i < model.getnMachines(); i++) {
+                balancingViolationR1 += Math.pow(loadR1.get(i) - avgLoadR1, 2);
+                balancingViolationR2 += Math.pow(loadR2.get(i) - avgLoadR2, 2);
+            }
+            balancingViolationR1 = Math.sqrt(balancingViolationR1) / model.getnMachines();
+            balancingViolationR2 = Math.sqrt(balancingViolationR2) / model.getnMachines();
         }
-
-        //ToDo: Effect of Load Imbalance between different partitions
-        //compare the ratio of load between all partitions and if its balanced improve violation
-        // but if it's imbalanced make some negative effects on violation
-
-        //alpha: effect of load on cost
+        //alpha: effect of load (loadViolation & capacityViolation) on cost
         float alpha = 1.5f;
         //beta: effect of crosscut on cost
         float beta = 2f;
 
+        if (mode == costMode.BestCut) {
+            alpha *= 0.6;
+            beta *= 10;
+        } else if (mode == costMode.LoadBalanced) {
+            alpha *= 3;
+            beta *= 0.6;
+        }
+
         //ToDo: effect of InternalCommunication(calculated but not used)
-        double z = (alpha * violation) + (beta * crosscut);
+        double z = (alpha * capacityViolation) +
+                (beta * crosscut) +
+                (alpha * ((balancingViolationR1) + (balancingViolationR2)) / 2);
 
         return new CostResult(loadR1, loadR2, crosscut, selection, z);
     }

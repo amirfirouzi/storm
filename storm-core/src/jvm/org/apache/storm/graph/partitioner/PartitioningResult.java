@@ -1,27 +1,31 @@
 package org.apache.storm.graph.partitioner;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by amir on 5/7/17.
  */
 public class PartitioningResult {
-    long elapsedTime;
-    float usedMemory;
-    int iteration, bestCut;
-    List<Integer> bestLoadR1, bestLoadR2;
-    int[] bestSelection;
-    double bestCost;
+    private long elapsedTime;
+    private float usedMemory;
+    private int iteration, bestCut;
+    private List<Integer> bestLoadR1, bestLoadR2;
+    private int[] bestSelection;
+    private double bestCost;
+    private Map<Integer, Partition> partitions;
 
-    public PartitioningResult(long elapsedTime,float usedMemory, int iteration, List<Integer> bestLoadR1, List<Integer> bestLoadR2, int bestCut, int[] bestSelection, double bestCost) {
+    public PartitioningResult(long elapsedTime, float usedMemory, int iteration, List<Integer> bestLoadR1, List<Integer> bestLoadR2, int bestCut, int[] bestSelection, double bestCost) {
         this.elapsedTime = elapsedTime;
-        this.usedMemory=usedMemory;
+        this.usedMemory = usedMemory;
         this.iteration = iteration;
         this.bestLoadR1 = bestLoadR1;
         this.bestLoadR2 = bestLoadR2;
         this.bestCut = bestCut;
         this.bestSelection = bestSelection;
         this.bestCost = bestCost;
+        this.partitions = new LinkedHashMap<>();
     }
 
     public long getElapsedTime() {
@@ -86,5 +90,17 @@ public class PartitioningResult {
 
     public void setBestCost(double bestCost) {
         this.bestCost = bestCost;
+    }
+
+    public Map<Integer, Partition> getPartitions() {
+        return partitions;
+    }
+
+    public void setPartitions(Map<Integer, Partition> partitions) {
+        this.partitions = partitions;
+    }
+
+    public void addPartition(Integer nodeId, Partition partition) {
+        this.partitions.put(nodeId, partition);
     }
 }

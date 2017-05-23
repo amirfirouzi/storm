@@ -1,23 +1,42 @@
 package org.apache.storm.graph.partitioner;
 
+import org.apache.storm.graph.Graph;
+import org.apache.storm.graph.Vertex;
+import org.apache.storm.scheduler.resource.RAS_Node;
+import org.apache.storm.scheduler.resource.RAS_Nodes;
+import org.apache.storm.scheduler.resource.SchedulingState;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.ops.transforms.Transforms;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created by amir on 4/15/17.
  */
 public class Partitioner {
-    public static PartitioningResult doPartition(Model model,CostFunction.costMode mode, boolean verbose) {
+    public static PartitioningResult doPartition(CostFunction.costMode mode, boolean verbose, Graph graph, SchedulingState schedulingState) {
         long startTime = System.currentTimeMillis();
 
+        //region get Model
+        RAS_Nodes nodes = schedulingState.nodes;
+        Map<Integer, RAS_Node> nodeWithIds = new LinkedHashMap<>();
+        int i = 0;
+        for (RAS_Node node :
+                nodes.getNodes()) {
+            nodeWithIds.put(i++, node);
+        }
+        ModelGenerator mg = new ModelGenerator();
+        Model model = null;
+        try {
+            model = mg.generateModel(graph, schedulingState);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //endregion
+
         //region ACO Parameters
-        int maxIt = 20;      // Maximum Number of Iterations
+        int maxIt = 50;      // Maximum Number of Iterations
         int nAnt = 50;        // Number of Ants (Population Size)
         int Q = 1;
 
@@ -96,7 +115,6 @@ public class Partitioner {
 
             // Store Best Cost & Best Selection
             bestResults.add(bestCost);
-//            bestSelections[it] = antSelections[bestAnt];
 
             // Show Iteration Information
             if (verbose)
@@ -112,7 +130,7 @@ public class Partitioner {
         long totalTime = endTime - startTime;
         float usedMemory = ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (float) (1024 * 1024));
         CostResult bestOfTheBest = bestResults.get(index);
-        PartitioningResult answer = new PartitioningResult(totalTime,usedMemory, index, bestOfTheBest.getLoadR1(), bestOfTheBest.getLoadR2(), bestOfTheBest.getCrosscut(), bestOfTheBest.getSelection(), bestOfTheBest.getCost());
+
         if (verbose) {
             System.out.println("\n-------------\n");
             System.out.println("Best Answer:\n Iteration: " + index + " Selection= " + arrayToString(bestOfTheBest.getSelection()) + " Cost= " + bestOfTheBest.getCost());
@@ -121,6 +139,23 @@ public class Partitioner {
 
         }
         //endregion
+
+        //region Create PartitioningResult Object
+        PartitioningResult answer = new PartitioningResult(totalTime, usedMemory, index, bestOfTheBest.getLoadR1(), bestOfTheBest.getLoadR2(), bestOfTheBest.getCrosscut(), bestOfTheBest.getSelection(), bestOfTheBest.getCost());
+        for (i = 0; i < answer.getBestSelection().length; i++) {
+            int nodeId = answer.getBestSelection()[i];
+            int taskId = i + 1;
+            if (answer.getPartitions().get(nodeId) != null) {
+                answer.getPartitions().get(nodeId).getVertices().add(graph.getVertex(taskId));
+            } else {
+                List<Vertex> partitionVertices = new ArrayList<>();
+                partitionVertices.add(graph.getVertex(taskId));
+                Partition p = new Partition(nodeWithIds.get(nodeId), partitionVertices, answer.getBestLoadR1().get(nodeId), answer.getBestLoadR2().get(nodeId));
+                answer.addPartition(nodeId, p);
+            }
+        }
+        //endregion
+
         return answer;
     }
 

@@ -46,120 +46,126 @@ import java.util.Random;
  */
 public class AdaptiveExclamationTopology {
 
-  public static class TestWordSpoutAdaptive extends BaseRichSpout {
-    public static Logger LOG = LoggerFactory.getLogger(org.apache.storm.testing.TestWordSpout.class);
-    boolean _isDistributed;
-    SpoutOutputCollector _collector;
-    //region monitoring
-    private TaskMonitor taskMonitor;
-    //endregion monitoring
+    public static class TestWordSpoutAdaptive extends BaseRichSpout {
+        public static Logger LOG = LoggerFactory.getLogger(org.apache.storm.testing.TestWordSpout.class);
+        boolean _isDistributed;
+        SpoutOutputCollector _collector;
+        //region monitoring
+        private TaskMonitor taskMonitor;
+        //endregion monitoring
 
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-      _collector = collector;
-      //region monitoring
-      //register this spout instance (task) to the java process monitor
-      WorkerMonitor.getInstance().setContextInfo(context);
-      //create the object required to notify relevant events (also notify thread ID)
-      taskMonitor = new TaskMonitor(context.getThisTaskId());
-      //endregion
+        public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+            _collector = collector;
+            //region monitoring
+            //register this spout instance (task) to the java process monitor
+            WorkerMonitor.getInstance().setContextInfo(context);
+            //create the object required to notify relevant events (also notify thread ID)
+            taskMonitor = new TaskMonitor(context.getThisTaskId());
+            //endregion
+        }
+
+        public void close() {
+
+        }
+
+        public void nextTuple() {
+            Utils.sleep(100);
+            final String[] words = new String[]{"nathan", "mike", "jackson", "golda", "bertels"};
+            final Random rand = new Random();
+            final String word = words[rand.nextInt(words.length)];
+            //region monitoring
+            taskMonitor.checkThreadId();
+            //endregion
+            _collector.emit(new Values(word));
+        }
+
+        public void ack(Object msgId) {
+
+        }
+
+        public void fail(Object msgId) {
+
+        }
+
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+            declarer.declare(new Fields("word"));
+        }
+
+        @Override
+        public Map<String, Object> getComponentConfiguration() {
+            if (!_isDistributed) {
+                Map<String, Object> ret = new HashMap<String, Object>();
+                ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 5);
+                return ret;
+            } else {
+                return null;
+            }
+        }
     }
 
-    public void close() {
+    public static class ExclamationBolt extends BaseRichBolt {
+        OutputCollector _collector;
+        //region monitoring
+        private TaskMonitor taskMonitor;
+        //endregion monitoring
+
+        @Override
+        public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+            _collector = collector;
+            //region monitoring
+            // register this spout instance (task) to the java process monitor
+            WorkerMonitor.getInstance().setContextInfo(context);
+            // create the object for notifying relevant events (received tuple, which in turn notifies thread ID)
+            taskMonitor = new TaskMonitor(context.getThisTaskId());
+            //endregion monitoring
+        }
+
+        @Override
+        public void execute(Tuple tuple) {
+            //region monitoring
+            taskMonitor.notifyTupleReceived(tuple);
+            //endregion monitoring
+            _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
+            _collector.ack(tuple);
+        }
+
+        @Override
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+            declarer.declare(new Fields("word"));
+        }
+
 
     }
 
-    public void nextTuple() {
-      Utils.sleep(100);
-      final String[] words = new String[]{"nathan", "mike", "jackson", "golda", "bertels"};
-      final Random rand = new Random();
-      final String word = words[rand.nextInt(words.length)];
-      //region monitoring
-      taskMonitor.checkThreadId();
-      //endregion
-      _collector.emit(new Values(word));
-    }
+    public static void main(String[] args) throws Exception {
+        TopologyBuilder builder = new TopologyBuilder();
 
-    public void ack(Object msgId) {
-
-    }
-
-    public void fail(Object msgId) {
-
-    }
-
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
-      declarer.declare(new Fields("word"));
-    }
-
-    @Override
-    public Map<String, Object> getComponentConfiguration() {
-      if (!_isDistributed) {
-        Map<String, Object> ret = new HashMap<String, Object>();
-        ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 5);
-        return ret;
-      } else {
-        return null;
-      }
-    }
-  }
-
-  public static class ExclamationBolt extends BaseRichBolt {
-    OutputCollector _collector;
-    //region monitoring
-    private TaskMonitor taskMonitor;
-    //endregion monitoring
-
-    @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
-      _collector = collector;
-      //region monitoring
-      // register this spout instance (task) to the java process monitor
-      WorkerMonitor.getInstance().setContextInfo(context);
-      // create the object for notifying relevant events (received tuple, which in turn notifies thread ID)
-      taskMonitor = new TaskMonitor(context.getThisTaskId());
-      //endregion monitoring
-    }
-
-    @Override
-    public void execute(Tuple tuple) {
-      //region monitoring
-      taskMonitor.notifyTupleReceived(tuple);
-      //endregion monitoring
-      _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
-      _collector.ack(tuple);
-    }
-
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
-      declarer.declare(new Fields("word"));
-    }
-
-
-  }
-
-  public static void main(String[] args) throws Exception {
-    TopologyBuilder builder = new TopologyBuilder();
-
-    builder.setSpout("a", new TestWordSpoutAdaptive(), 1);
+        builder.setSpout("a", new TestWordSpoutAdaptive(), 1)
+                .setMemoryLoad(100)
+                .setCPULoad(200);
 //    builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"));
-    builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"));
-    builder.setBolt("c", new ExclamationBolt(), 2).allGrouping("b");
+        builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"))
+                .setMemoryLoad(100)
+                .setCPULoad(500);
+        builder.setBolt("c", new ExclamationBolt(), 2).allGrouping("b")
+                .setMemoryLoad(50)
+                .setCPULoad(300);
 
-    Config conf = new Config();
-    conf.setDebug(true);
-    conf.setNumWorkers(2);
-    //conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy.class);
+        Config conf = new Config();
+        conf.setDebug(true);
+        conf.setNumWorkers(2);
+        //conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy.class);
 
-    if (args != null && args.length > 0) {
-      conf.setNumWorkers(3);
+        if (args != null && args.length > 0) {
+            conf.setNumWorkers(3);
 
-      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
-    } else {
+            StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
+        } else {
 
-      try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("adaptive-exclamation-topology", conf, builder.createTopology());) {
-        Utils.sleep(100000);
-      }
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("adaptive-exclamation-topology", conf, builder.createTopology());) {
+                Utils.sleep(100000);
+            }
+        }
     }
-  }
 }

@@ -23,7 +23,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.*;
-import org.apache.storm.scheduler.resource.strategies.scheduling.myStrategy.ObjectResources;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.ObjectResources;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
@@ -245,7 +245,7 @@ public class TestMyStrategy {
 
     Topologies topologies = new Topologies(topoMap);
 
-    myStrategy rs = new myStrategy();
+    DefaultResourceAwareStrategy rs = new DefaultResourceAwareStrategy();
 
     rs.prepare(new SchedulingState(new HashMap<String, User>(), cluster, topologies, config));
     TreeSet<ObjectResources> sortedRacks = rs.sortRacks(topo1.getId(), new HashMap<WorkerSlot, Collection<ExecutorDetails>>());
@@ -292,7 +292,7 @@ public class TestMyStrategy {
       cluster.assign(targetSlot, topo2.getId(), Arrays.asList(targetExec));
     }
 
-    rs = new myStrategy();
+    rs = new DefaultResourceAwareStrategy();
     rs.prepare(new SchedulingState(new HashMap<String, User>(), cluster, topologies, config));
     // schedule topo2
     schedulingResult = rs.schedule(topo2);

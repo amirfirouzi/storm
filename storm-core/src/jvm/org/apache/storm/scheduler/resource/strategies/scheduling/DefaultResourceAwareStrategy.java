@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.storm.graph.partitioner.PartitioningResult;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.RAS_Node;
@@ -117,6 +118,11 @@ public class DefaultResourceAwareStrategy implements IStrategy {
             LOG.error("Topology {} not successfully scheduled!", td.getId());
         }
         return result;
+    }
+
+    @Override
+    public SchedulingResult schedule(TopologyDetails td, PartitioningResult partitioning) {
+        return null;
     }
 
     /**
