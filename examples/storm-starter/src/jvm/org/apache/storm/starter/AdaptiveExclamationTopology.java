@@ -141,15 +141,21 @@ public class AdaptiveExclamationTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         builder.setSpout("a", new TestWordSpoutAdaptive(), 1)
-                .setMemoryLoad(100)
+                .setMemoryLoad(200)
                 .setCPULoad(200);
 //    builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"));
         builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"))
-                .setMemoryLoad(100)
-                .setCPULoad(500);
+                .setMemoryLoad(300)
+                .setCPULoad(100);
         builder.setBolt("c", new ExclamationBolt(), 2).allGrouping("b")
-                .setMemoryLoad(50)
-                .setCPULoad(300);
+                .setMemoryLoad(150)
+                .setCPULoad(100);
+//        builder.setBolt("d", new ExclamationBolt(), 2).allGrouping("c")
+//                .setMemoryLoad(50)
+//                .setCPULoad(300);
+//        builder.setBolt("e", new ExclamationBolt(), 2).allGrouping("d")
+//                .setMemoryLoad(50)
+//                .setCPULoad(300);
 
         Config conf = new Config();
         conf.setDebug(true);

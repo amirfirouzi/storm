@@ -84,7 +84,7 @@ public class myStrategy implements IStrategy {
             for (Vertex vertex :
                     partition.getValue().getVertices()) {
                 ExecutorDetails exec = vertex.getExecutor();
-                LOG.info("Attempting to schedule: {} of component {}[ REQ {} ]",
+                LOG.info("Attempting to schedule: {} of component {} [ REQ {} ]",
                         exec, td.getExecutorToComponent().get(exec),
                         td.getTaskResourceReqList(exec));
                 scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, partition.getValue());

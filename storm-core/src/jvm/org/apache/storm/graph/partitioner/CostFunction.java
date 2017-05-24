@@ -1,9 +1,6 @@
 package org.apache.storm.graph.partitioner;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by amir on 4/15/17.
@@ -39,8 +36,18 @@ public class CostFunction {
 
         for (int i = 0; i < model.getnMachines(); i++) {
             List<Integer> partitionTasks = find(selection, i);
+//            partitionTasks.clear();
+//            partitionTasks.add(0);
+//            partitionTasks.add(2);
+//            partitionTasks.add(4);
+//            partitionTasks.add(7);
+//            partitionTasks.add(5);
+//            partitionTasks.add(7);
+//            partitionTasks.add(8);
+
             partitions.put(i, partitionTasks);
             if (partitionTasks.size() != 0) {
+                boolean connected = isConnected(model.getAdjacency(), partitionTasks);
                 //internal.add(InternalCommunication(partitionTasks, model.getAdjacency()));
                 loadR1.add(InternalLoad(partitionTasks, model.getR1()));
                 loadR2.add(InternalLoad(partitionTasks, model.getR2()));
@@ -60,7 +67,6 @@ public class CostFunction {
                 loadR2.add(0);
             }
         }
-
 
         //ToDo: Consider effect of disconnected Vertices in partitions
 
@@ -105,6 +111,83 @@ public class CostFunction {
                 (alpha * ((balancingViolationR1) + (balancingViolationR2)) / 2);
 
         return new CostResult(loadR1, loadR2, crosscut, selection, z);
+    }
+
+
+    public boolean isConnected(int[][] adj, List<Integer> partitionTasks) {
+        Set<Integer> covered = new HashSet<>();
+        List<Integer> visited = new ArrayList<>();
+
+        covered.add(partitionTasks.get(0));
+        visited.add(partitionTasks.get(0));
+        for (int i = 1; i < partitionTasks.size(); i++) {
+            List<Integer> neighbours = neighboursOf(adj, visited);
+            if (neighbours.contains(partitionTasks.get(i))) {
+                covered.addAll(neighboursOf(adj, visited));
+                visited.add(partitionTasks.get(i));
+            }
+        }
+        if (visited.size() == partitionTasks.size())
+            return true;
+        else
+            return false;
+
+
+//        Integer currentElement = partitionTasks.get(0);
+//        List<Integer> neighbours = null;
+//        Stack<Integer> stack = new Stack<>();
+//        stack.push(currentElement);
+//        int i = 0, visited = 1;
+//        while ((!stack.isEmpty()) && (visited < partitionTasks.size())) {
+//            neighbours = neighboursOf(adj, currentElement);
+//            if (neighbours.contains(partitionTasks.get(++i))) {
+//                currentElement = partitionTasks.get(i);
+//                stack.push(currentElement);
+//                visited++;
+//            } else {
+//                //stack.pop();
+//                i -= 1;
+//                currentElement = stack.pop();
+//            }
+//        }
+//        if (!stack.isEmpty())
+//            return true;
+//        else
+//        return false;
+    }
+
+    private List<Integer> neighboursOf(int[][] adj, List<Integer> elements) {
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < elements.size(); i++) {
+            for (int j = 0; j < adj[elements.get(i)].length; j++) {
+                if (elements.get(i) > j) {
+                    if (adj[j][elements.get(i)] != 0)
+                        result.add(j);
+                } else {
+                    if (adj[elements.get(i)][j] != 0)
+                        result.add(j);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private List<Integer> neighboursOf(int[][] adj, int[] elements) {
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < elements.length; i++) {
+            for (int j = 0; j < adj[elements[i]].length; j++) {
+                if (elements[i] > j) {
+                    if (adj[j][elements[i]] != 0)
+                        result.add(j);
+                } else {
+                    if (adj[elements[i]][j] != 0)
+                        result.add(j);
+                }
+            }
+        }
+
+        return result;
     }
 
     private int InternalCommunication(List<Integer> partitionTasks, int[][] Adjacency) {
