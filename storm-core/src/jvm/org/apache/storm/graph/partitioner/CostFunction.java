@@ -33,7 +33,7 @@ public class CostFunction {
         List<Integer> loadR2 = new ArrayList();
         int[] capacityR1 = model.getM1();
         int[] capacityR2 = model.getM2();
-
+        int disconnectedPartitions = 0;
         for (int i = 0; i < model.getnMachines(); i++) {
             List<Integer> partitionTasks = find(selection, i);
 //            partitionTasks.clear();
@@ -48,6 +48,7 @@ public class CostFunction {
             partitions.put(i, partitionTasks);
             if (partitionTasks.size() != 0) {
                 boolean connected = isConnected(model.getAdjacency(), partitionTasks);
+                disconnectedPartitions += (!connected ? 1 : 0);
                 //internal.add(InternalCommunication(partitionTasks, model.getAdjacency()));
                 loadR1.add(InternalLoad(partitionTasks, model.getR1()));
                 loadR2.add(InternalLoad(partitionTasks, model.getR2()));
@@ -92,23 +93,25 @@ public class CostFunction {
             balancingViolationR1 = Math.sqrt(balancingViolationR1) / model.getnMachines();
             balancingViolationR2 = Math.sqrt(balancingViolationR2) / model.getnMachines();
         }
-        //alpha: effect of load (loadViolation & capacityViolation) on cost
-        float alpha = 1.5f;
-        //beta: effect of crosscut on cost
-        float beta = 2f;
+        //loadEffectRatio: effect of load (loadViolation & capacityViolation) on cost
+        float loadEffectRatio = 1.5f;
+        float crosscutEffectRatio = 2f;
+        float disconnectivityEffect = 100f;
+
 
         if (mode == costMode.BestCut) {
-            alpha *= 0.6;
-            beta *= 10;
+            loadEffectRatio *= 0.6;
+            crosscutEffectRatio *= 10;
         } else if (mode == costMode.LoadBalanced) {
-            alpha *= 3;
-            beta *= 0.6;
+            loadEffectRatio *= 3;
+            crosscutEffectRatio *= 0.6;
         }
 
         //ToDo: effect of InternalCommunication(calculated but not used)
-        double z = (alpha * capacityViolation) +
-                (beta * crosscut) +
-                (alpha * ((balancingViolationR1) + (balancingViolationR2)) / 2);
+        double z = (loadEffectRatio * capacityViolation) + //Capacity Violation Cost
+                (crosscutEffectRatio * crosscut) + //crosscut Cost
+                (loadEffectRatio * ((balancingViolationR1) + (balancingViolationR2)) / 2) + //load balancing cost
+                (disconnectedPartitions * disconnectivityEffect);
 
         return new CostResult(loadR1, loadR2, crosscut, selection, z);
     }

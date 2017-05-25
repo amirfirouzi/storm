@@ -199,6 +199,7 @@ public class OnlineScheduler implements IScheduler {
 
   private void computeBestScheduling(List<String> dbTopologies, Topologies stormTopologies, Cluster cluster) throws Exception {
 
+    //region First Phase
     logger.info("-- First phase --");
     List<Topology> topologyList = new ArrayList<Topology>();
     for (String topologyID : dbTopologies) {
@@ -370,7 +371,9 @@ public class OnlineScheduler implements IScheduler {
     logger.info("First phase completed!");
     List<SlotPair> interSlotTrafficList = TrafficManager.getInstance().getInterSlotTrafficList();
     logger.info("Inter-slot traffic stats: " + Utils.collectionToString(interSlotTrafficList));
+    //endregion
 
+    // region Second Phase
     // second phase
     logger.info("-- Second phase --");
     NodeManager nodeManager = new NodeManager(topologyList, cluster);
@@ -534,7 +537,7 @@ public class OnlineScheduler implements IScheduler {
         } /* end while (number of used nodes < number of nodes to use */
       } /* end for (Topology topology : topologyList) */
     }
-
+//endregion
     logger.info("Second phase completed!");
     if (TrafficManager.getInstance().getAssignments() != null)
       logger.info("Final assignment: " + Utils.collectionToString(TrafficManager.getInstance().getAssignments().keySet()));

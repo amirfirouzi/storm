@@ -25,10 +25,11 @@ public class Topology {
 	/**
 	 * the list of slots for this topology
 	 */
+    //List of Slots
 	private List<Slot> slotList;
 	
 	private final String topologyID;
-	
+	//Number of Executors
 	private int executorCount;
 	
 	private final float alfa, beta, gamma, delta;

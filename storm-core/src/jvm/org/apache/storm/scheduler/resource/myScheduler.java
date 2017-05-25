@@ -115,7 +115,7 @@ public class myScheduler implements IScheduler {
     public void scheduleTopology(TopologyDetails td) {
         //region GraphPartitioning
         Graph graph = TopologyGraphBuilder.buildGraph(td);
-        PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.BestCut, true, graph, schedulingState);
+        PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
         //endregion
 
         User topologySubmitter = this.schedulingState.userMap.get(td.getTopologySubmitter());
