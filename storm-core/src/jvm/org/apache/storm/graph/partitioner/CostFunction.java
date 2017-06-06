@@ -36,14 +36,6 @@ public class CostFunction {
         int disconnectedPartitions = 0;
         for (int i = 0; i < model.getnMachines(); i++) {
             List<Integer> partitionTasks = find(selection, i);
-//            partitionTasks.clear();
-//            partitionTasks.add(0);
-//            partitionTasks.add(2);
-//            partitionTasks.add(4);
-//            partitionTasks.add(7);
-//            partitionTasks.add(5);
-//            partitionTasks.add(7);
-//            partitionTasks.add(8);
 
             partitions.put(i, partitionTasks);
             if (partitionTasks.size() != 0) {

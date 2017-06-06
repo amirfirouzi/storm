@@ -374,7 +374,6 @@ public class OnlineScheduler implements IScheduler {
     //endregion
 
     // region Second Phase
-    // second phase
     logger.info("-- Second phase --");
     NodeManager nodeManager = new NodeManager(topologyList, cluster);
     if (nodeManager.getNodeCount() == 0) {

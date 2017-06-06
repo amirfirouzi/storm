@@ -5,9 +5,7 @@ import org.apache.storm.graph.Vertex;
 import org.apache.storm.scheduler.resource.RAS_Node;
 import org.apache.storm.scheduler.resource.RAS_Nodes;
 import org.apache.storm.scheduler.resource.SchedulingState;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.ops.transforms.Transforms;
+
 
 import java.util.*;
 
@@ -36,8 +34,8 @@ public class Partitioner {
         //endregion
 
         //region ACO Parameters
-        int maxIt = 50;      // Maximum Number of Iterations
-        int nAnt = 50;        // Number of Ants (Population Size)
+        int maxIt = 500;      // Maximum Number of Iterations
+        int nAnt = 500;        // Number of Ants (Population Size)
         int Q = 1;
 
         int tau0 = 1;         // Initial Pheromone
@@ -49,9 +47,10 @@ public class Partitioner {
         //region Initialization
         //ToDo: Heuristic Information
         // eta
-//    float[][] tau = new float[model.getnMachines()][model.getnTasks()];
-        INDArray tau = Nd4j.ones(model.getnMachines(), model.getnTasks());
-//    fillArray(tau, 1);
+        double[][] tau = new double[model.getnMachines()][model.getnTasks()];
+        ones(tau);
+//        INDArray tau = Nd4j.ones(model.getnMachines(), model.getnTasks());
+
         List<CostResult> bestResults = new ArrayList<CostResult>();
 //        int[][] bestSelections = new int[maxIt][];
 
@@ -77,8 +76,10 @@ public class Partitioner {
                 antSelections[ant] = new int[model.getnTasks()];
                 for (int level = 0; level < model.getnTasks(); level++) {
                     // Probabilities
-                    INDArray p = Transforms.pow(tau.getColumn(level), alpha);
-                    p = p.div(p.sumNumber());
+//                    INDArray p = Transforms.pow(tau.getColumn(level), alpha);
+                    double[] p = powColumn(tau, alpha, level);
+//                    p = p.div(p.sumNumber());
+                    divi(p, sumOfElements(p));
 
                     int selectionCandidate = RouletteWheelSelection(p);
                     antSelections[ant][level] = selectionCandidate;
@@ -103,15 +104,19 @@ public class Partitioner {
 
             // Update Phromones
             // Move Ants
+            int selectedMachine;
             for (int ant = 0; ant < nAnt; ant++) {
                 for (int level = 0; level < model.getnTasks(); level++) {
-                    double pheremone = tau.getRow(antSelections[ant][level]).getDouble(level) + (Q / antCosts[ant]);
-                    tau.putScalar(antSelections[ant][level], level, pheremone);
+                    selectedMachine = antSelections[ant][level];
+//                    double pheremone = tau.getRow(antSelections[ant][level]).getDouble(level) + (Q / antCosts[ant]);
+//                    tau.putScalar(antSelections[ant][level], level, pheremone);
+                    tau[selectedMachine][level] += (Q / antCosts[ant]);
                 }
             }
 
             // Evaporation
-            tau.muli((1 - rho));
+//            tau.muli((1 - rho));
+            muli(tau, (1 - rho));
 
             // Store Best Cost & Best Selection
             bestResults.add(bestCost);
@@ -159,14 +164,29 @@ public class Partitioner {
         return answer;
     }
 
-    public static int RouletteWheelSelection(INDArray p) {
+//    public static int RouletteWheelSelection(INDArray p) {
+//        Random rand = new Random();
+//
+//        float n = rand.nextFloat();
+//        INDArray c = p.cumsum(0);
+//        int result = p.length() - 1;
+//        for (int i = 0; i < p.length(); i++) {
+//            if (c.getFloat(i) >= n) {
+//                result = i;
+//                break;
+//            }
+//        }
+//        return result;
+//    }
+
+    public static int RouletteWheelSelection(double[] p) {
         Random rand = new Random();
 
         float n = rand.nextFloat();
-        INDArray c = p.cumsum(0);
-        int result = p.length() - 1;
-        for (int i = 0; i < p.length(); i++) {
-            if (c.getFloat(i) >= n) {
+        double[] c = cumsum(p);
+        int result = p.length - 1;
+        for (int i = 0; i < p.length; i++) {
+            if (c[i] >= n) {
                 result = i;
                 break;
             }
@@ -210,4 +230,65 @@ public class Partitioner {
         }
         return index;
     }
+
+    //region Array Operations
+    public static void ones(double[][] array) {
+        for (int i = 0; i < array.length; i++) {
+            for (int j = 0; j < array[0].length; j++) {
+                array[i][j] = 2;
+            }
+        }
+    }
+
+    public static double sumOfElements(double[] array) {
+        double sum = 0;
+        for (int i = 0; i < array.length; i++) {
+            sum += array[i];
+        }
+        return sum;
+    }
+
+    public static double[] powColumn(double[][] array, double value, int column) {
+        double[] result = new double[array.length];
+        for (int i = 0; i < array.length; i++) {
+            result[i] = Math.pow(array[i][column], value);
+        }
+        return result;
+    }
+
+    public static void divi(double[] array, double value) {
+        for (int i = 0; i < array.length; i++) {
+            array[i] /= value;
+        }
+    }
+
+    public static void addi(double[][] array, double value) {
+        for (int i = 0; i < array.length; i++) {
+            for (int j = 0; j < array[0].length; j++) {
+                array[i][j] += value;
+            }
+        }
+    }
+
+    public static void muli(double[][] array, double value) {
+        for (int i = 0; i < array.length; i++) {
+            for (int j = 0; j < array[0].length; j++) {
+                array[i][j] *= value;
+            }
+        }
+    }
+
+    public static double[] cumsum(double[] array) {
+        double[] result = new double[array.length];
+        for (int i = 0; i < array.length; i++) {
+            if ((i - 1) >= 0) {
+                result[i] = array[i] + array[i - 1];
+            } else {
+                result[i] = array[i];
+            }
+        }
+        return result;
+    }
+    //endregion
+
 }
