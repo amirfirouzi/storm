@@ -55,7 +55,11 @@ public class Executor {
 		else if (task > endTask)
 			endTask = task;
 	}
-	
+
+    public String getFullExecutorName() {
+        return "[" + beginTask + ", " + endTask + "]";
+    }
+
 	@Override
 	public String toString() {
 		return "[" + beginTask + ", " + endTask + "]; load: " + load + " Hz/s" + ((node!=null)?"; node: " + node:"");

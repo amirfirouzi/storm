@@ -10,7 +10,7 @@
 *******************************************************************************/
 package org.apache.storm.scheduler.resource.monitoring;
 
-import org.apache.storm.scheduler.adaptive.Executor;
+import org.apache.storm.scheduler.resource.monitoring.Executor;
 
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +32,7 @@ public class Utils {
 	 * @param executorList
 	 * @return the executor where the given task lives in
 	 */
-	public static org.apache.storm.scheduler.adaptive.Executor getExecutor(int task, List<org.apache.storm.scheduler.adaptive.Executor> executorList) {
+	public static Executor getExecutor(int task, List<Executor> executorList) {
 		for (Executor executor : executorList)
 			if (task >= executor.getBeginTask() && task <= executor.getEndTask())
 				return executor;

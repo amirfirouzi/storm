@@ -1,7 +1,6 @@
 package org.apache.storm.graph.partitioner;
 
 import org.apache.storm.graph.Vertex;
-import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.resource.RAS_Node;
 
 import java.util.List;

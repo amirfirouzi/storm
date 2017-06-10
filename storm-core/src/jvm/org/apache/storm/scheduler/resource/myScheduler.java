@@ -25,8 +25,9 @@ import org.apache.storm.graph.partitioner.CostFunction;
 import org.apache.storm.graph.partitioner.Partitioner;
 import org.apache.storm.graph.partitioner.PartitioningResult;
 import org.apache.storm.scheduler.*;
+import org.apache.storm.scheduler.resource.monitoring.DataManager;
+import org.apache.storm.scheduler.resource.monitoring.ExecutorPair;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
-import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -34,10 +35,15 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static org.apache.storm.scheduler.resource.monitoring.Utils.collectionToString;
+
 public class myScheduler implements IScheduler {
 
     // Object that holds the current scheduling state
     private SchedulingState schedulingState;
+    private static final int DEFAULT_RESCHEDULE_TIMEOUT = 180;
+    private Map<String, Long> lastRescheduledTopologies;
+    private long lastRescheduling;
 
     @SuppressWarnings("rawtypes")
     private Map conf;
@@ -65,39 +71,61 @@ public class myScheduler implements IScheduler {
             LOG.info(user.getDetailedInfo());
         }
 
-        ISchedulingPriorityStrategy schedulingPrioritystrategy = null;
-        while (true) {
+        if (!topologies.getTopologies().isEmpty()) {
+            int rescheduleTimeout = DEFAULT_RESCHEDULE_TIMEOUT;
+            for (TopologyDetails td : topologies.getTopologies()) {
+                rescheduleTimeout = Integer.parseInt(td.getConf().get(org.apache.storm.scheduler.adaptive.Utils.RESCHEDULE_TIMEOUT).toString());
+                lastRescheduledTopologies.put(td.getId(), 0L);
 
-            if (schedulingPrioritystrategy == null) {
-                try {
-                    schedulingPrioritystrategy = (ISchedulingPriorityStrategy) Utils.newInstance((String) this.conf.get(Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY));
-                } catch (RuntimeException ex) {
-                    LOG.error(String.format("failed to create instance of priority strategy: %s with error: %s! No topologies will be scheduled.",
-                            this.conf.get(Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY), ex.getMessage()), ex);
-                    break;
-                }
             }
-            TopologyDetails td;
-            try {
-                //need to re prepare since scheduling state might have been restored
-                schedulingPrioritystrategy.prepare(this.schedulingState);
-                //Call scheduling priority strategy
-                td = schedulingPrioritystrategy.getNextTopologyToSchedule();
-            } catch (Exception ex) {
-                LOG.error(String.format("Exception thrown when running priority strategy %s. No topologies will be scheduled! Error: %s"
-                        , schedulingPrioritystrategy.getClass().getName(), ex.getMessage()), ex.getStackTrace());
-                break;
-            }
-            if (td == null) {
-                break;
-            }
-            scheduleTopology(td);
-
-            LOG.info("Nodes after scheduling:\n{}", this.schedulingState.nodes);
+            long now = System.currentTimeMillis();
+            long elapsedTime = (now - lastRescheduling) / 1000; // s
+            if (lastRescheduling == 0 || elapsedTime >= rescheduleTimeout)
+                chooseSchedulingPlan(topologies, cluster);
+            else
+                LOG.info("It's not time to reschedule yet, " + elapsedTime + " seconds have passed, other " + (rescheduleTimeout - elapsedTime) + " seconds have to pass");
         }
+        LOG.info("Nodes after scheduling:\n{}", this.schedulingState.nodes);
 
-        //update changes to cluster
         updateChanges(cluster, topologies);
+    }
+
+    private void chooseSchedulingPlan(Topologies topologies, Cluster cluster) {
+        List<String> dbTopologies = null;
+        try {
+            dbTopologies = DataManager.getInstance().getTopologies();
+            LOG.info("DB Topologies: " + collectionToString(dbTopologies));
+
+            // get topologies from Storm and identify topologies to be deleted
+            List<String> topologiesToBeRemoved = new ArrayList<String>(dbTopologies);
+//            int trafficImprovement = 0;
+            for (TopologyDetails td : topologies.getTopologies()) {
+
+                if (dbTopologies.contains(td.getId())) {// ReScheduling this topology(RePartitioning)
+                    reScheduleTopology(td);
+                } else {// First Time To Schedule this topology(initial Partitioning)
+                    initialScheduleTopology(td);
+//                trafficImprovement = Integer.parseInt(topology.getConf().get(TRAFFIC_IMPROVEMENT).toString());
+                }
+                lastRescheduledTopologies.put(td.getId(), System.currentTimeMillis());
+                lastRescheduling = System.currentTimeMillis();
+                topologiesToBeRemoved.remove(td.getId());
+                LOG.debug("Configuration of topology " + td.getId());
+                for (Object key : td.getConf().keySet())
+                    LOG.debug("- " + key + ": " + td.getConf().get(key));
+            }
+
+            dbTopologies.removeAll(topologiesToBeRemoved);
+            LOG.info("Topologies to be removed from DB: " + collectionToString(topologiesToBeRemoved));
+
+            // remove topologies from DB
+            if (!topologiesToBeRemoved.isEmpty()) {
+                DataManager.getInstance().removeTopologies(topologiesToBeRemoved);
+                LOG.info("Topologies succesfully removed from DB");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void updateChanges(Cluster cluster, Topologies topologies) {
@@ -112,12 +140,36 @@ public class myScheduler implements IScheduler {
         updateSupervisorsResources(cluster, topologies);
     }
 
-    public void scheduleTopology(TopologyDetails td) {
-        //region GraphPartitioning
+    public void initialScheduleTopology(TopologyDetails td) {
+
         Graph graph = TopologyGraphBuilder.buildGraph(td);
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
-        //endregion
+        scheduleTopology(td, partitioning);
+    }
 
+    public void reScheduleTopology(TopologyDetails td) {
+
+        Graph graph = TopologyGraphBuilder.buildGraph(td);
+        //TODO: adding weights to graph
+        List<ExecutorPair> traffic = new ArrayList<>();
+        try {
+            traffic = DataManager.getInstance().getInterExecutorTrafficList(td.getId());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        for (ExecutorPair exec :
+                traffic) {
+            String from = exec.getSource().getFullExecutorName();
+            String to = exec.getDestination().getFullExecutorName();
+            int trafficValue = exec.getTraffic();
+            graph.getEdgeFromExecutor(from, to).setWeight(trafficValue);
+        }
+
+        PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
+        scheduleTopology(td, partitioning);
+    }
+
+    public void scheduleTopology(TopologyDetails td, PartitioningResult partitioning) {
         User topologySubmitter = this.schedulingState.userMap.get(td.getTopologySubmitter());
         if (this.schedulingState.cluster.getUnassignedExecutors(td).size() > 0) {
             LOG.debug("/********Scheduling topology {} from User {}************/", td.getName(), topologySubmitter);
@@ -125,7 +177,9 @@ public class myScheduler implements IScheduler {
             SchedulingState schedulingState = checkpointSchedulingState();
             IStrategy rasStrategy = null;
             try {
+
                 rasStrategy = (IStrategy) Utils.newInstance((String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY));
+
             } catch (RuntimeException e) {
                 LOG.error("failed to create instance of IStrategy: {} with error: {}! Topology {} will not be scheduled.",
                         td.getName(), td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY), e.getMessage());
@@ -374,6 +428,7 @@ public class myScheduler implements IScheduler {
     private void initialize(Topologies topologies, Cluster cluster) {
         Map<String, User> userMap = getUsers(topologies, cluster);
         this.schedulingState = new SchedulingState(userMap, cluster, topologies, this.conf);
+        lastRescheduledTopologies = new HashMap<>();
     }
 
     /**

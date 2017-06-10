@@ -17,12 +17,8 @@ import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
-import org.apache.storm.scheduler.adaptive.Executor;
-import org.apache.storm.scheduler.adaptive.ExecutorPair;
 import org.apache.storm.scheduler.adaptive.Node;
-import org.apache.storm.scheduler.adaptive.Utils;
-import org.apache.storm.scheduler.adaptive.cpuinfo.CPUInfo;
-
+import org.apache.storm.scheduler.resource.monitoring.cpuinfo.CPUInfo;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -436,12 +432,12 @@ public class DataManager {
 			statement = connection.createStatement();
 			
 			// load executors
-			List<org.apache.storm.scheduler.adaptive.Executor> executorList = new ArrayList<org.apache.storm.scheduler.adaptive.Executor>();
+			List<Executor> executorList = new ArrayList<Executor>();
 			String sql = "select begin_task, end_task, `load` from `load` join topology on `load`.topology_id = topology.id where storm_id = '" + topologyID + "'";
 			logger.debug("SQL script: " + sql);
 			resultSet = statement.executeQuery(sql);
 			while (resultSet.next()) {
-				org.apache.storm.scheduler.adaptive.Executor executor = new org.apache.storm.scheduler.adaptive.Executor(resultSet.getInt(1), resultSet.getInt(2));
+				Executor executor = new Executor(resultSet.getInt(1), resultSet.getInt(2));
 				executor.setLoad(resultSet.getLong(3));
 				executor.setTopologyID(topologyID);
 				executorList.add(executor);
@@ -462,9 +458,9 @@ public class DataManager {
 				int traffic = resultSet.getInt(3);
 
 				// look up executor pair
-				org.apache.storm.scheduler.adaptive.Executor source = Utils.getExecutor(sourceTask, executorList);
+				Executor source = Utils.getExecutor(sourceTask, executorList);
 				logger.debug("source executor for source task " + sourceTask + ": " + source);
-				org.apache.storm.scheduler.adaptive.Executor destination = Utils.getExecutor(destinationTask, executorList);
+				Executor destination = Utils.getExecutor(destinationTask, executorList);
 				logger.debug("destination executor for destination task " + destinationTask + ": " + destination);
 
 				if (source != null && destination != null) {
@@ -564,12 +560,12 @@ public class DataManager {
 			statement = connection.createStatement();
 
 			// load executors
-			List<org.apache.storm.scheduler.adaptive.Executor> executorList = new ArrayList<org.apache.storm.scheduler.adaptive.Executor>();
+			List<Executor> executorList = new ArrayList<Executor>();
 			String sql = "select begin_task, end_task, `load`, node from `load`";
 			logger.debug("SQL script: " + sql);
 			resultSet = statement.executeQuery(sql);
 			while (resultSet.next()) {
-				org.apache.storm.scheduler.adaptive.Executor executor = new org.apache.storm.scheduler.adaptive.Executor(resultSet.getInt(1), resultSet.getInt(2));
+				Executor executor = new Executor(resultSet.getInt(1), resultSet.getInt(2));
 				executor.setLoad(resultSet.getLong(3));
 				executor.setNode(resultSet.getString(4));
 				executorList.add(executor);
@@ -588,7 +584,7 @@ public class DataManager {
 				int traffic = resultSet.getInt(3);
 
 				// look up executor pair
-				org.apache.storm.scheduler.adaptive.Executor source = Utils.getExecutor(sourceTask, executorList);
+				Executor source = Utils.getExecutor(sourceTask, executorList);
 				logger.debug("source executor for source task " + sourceTask + ": " + source);
 				Executor destination = Utils.getExecutor(destinationTask, executorList);
 				logger.debug("destination executor for destination task " + destinationTask + ": " + destination);

@@ -35,7 +35,7 @@ public class Partitioner {
 
         //region ACO Parameters
         int maxIt = 500;      // Maximum Number of Iterations
-        int nAnt = 500;        // Number of Ants (Population Size)
+        int nAnt = 100;        // Number of Ants (Population Size)
         int Q = 1;
 
         int tau0 = 1;         // Initial Pheromone

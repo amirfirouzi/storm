@@ -71,17 +71,18 @@ public class Graph {
 
     public Vertex addVertex(ExecutorEntity exec, Resource weights) {
         Vertex v;
-        String name = exec.getComponentyName() + "-" + exec.getInstanceId();
-        v = vertices.get(name);
+        String vertexName = exec.getComponentyName() + "-" + exec.getInstanceId();
+        v = vertices.get(vertexName);
         if (v == null) {
-            v = new Vertex(name, exec.getExecutor(), weights);
+            v = new Vertex(vertexName, exec.getExecutor(), weights);
             numOfVertices += 1;
             v.setId(numOfVertices);
             v.setExecutor(exec.getExecutor());
-            vertices.put(name, v);
+            vertices.put(vertexName, v);
             executors.put(exec.getExecutor().toString(), exec.getExecutor());
-            verticesIds.put(numOfVertices, name);
-            execsTovertices.put(exec.getExecutorName(), name);
+            verticesIds.put(numOfVertices, vertexName);
+            String execName = exec.getExecutor().toString();
+            execsTovertices.put(execName, vertexName);
             adjList.put(v, new TreeSet<Vertex>());
 
         }
@@ -90,6 +91,10 @@ public class Graph {
 
     public Vertex getVertex(String name) {
         return vertices.get(name);
+    }
+
+    public Vertex getVertexFromExecutor(String execName) {
+        return vertices.get(execsTovertices.get(execName));
     }
 
     public Vertex getVertex(Integer index) {
@@ -114,6 +119,12 @@ public class Graph {
         return edges.get(edgeName);
     }
 
+    public Edge getEdgeFromExecutor(String from, String to) {
+        Vertex vFrom = getVertexFromExecutor(from);
+        Vertex vTo = getVertexFromExecutor(to);
+        return getEdge(vFrom.getName(), vTo.getName());
+
+    }
 
     public Edge addEdge(ExecutorEntity execFrom, ExecutorEntity execTo) {
         Vertex src;
