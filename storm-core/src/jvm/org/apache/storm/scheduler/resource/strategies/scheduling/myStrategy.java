@@ -54,8 +54,6 @@ public class myStrategy implements IStrategy {
 
     @Override
     public SchedulingResult schedule(TopologyDetails td, PartitioningResult partitioning) {
-        //build graph structure from topology
-//    TopologyGraphBuilder.buildGraph(td);
 
         if (_nodes.getNodes().size() <= 0) {
             LOG.warn("No available nodes to schedule tasks on!");
@@ -72,10 +70,8 @@ public class myStrategy implements IStrategy {
             return SchedulingResult.failure(SchedulingStatus.FAIL_INVALID_TOPOLOGY, "Cannot find a Spout!");
         }
 
-
         //order executors to be scheduled
         //List<ExecutorDetails> orderedExecutors = orderExecutors(td, unassignedExecutors);
-
 
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
 

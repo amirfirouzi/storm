@@ -43,6 +43,7 @@ public class myScheduler implements IScheduler {
     private SchedulingState schedulingState;
     private static final int DEFAULT_RESCHEDULE_TIMEOUT = 180;
     private Map<String, Long> lastRescheduledTopologies;
+    private Map<String, PartitioningResult> lastPartitioning;
     private long lastRescheduling;
 
     @SuppressWarnings("rawtypes")
@@ -144,7 +145,9 @@ public class myScheduler implements IScheduler {
 
         Graph graph = TopologyGraphBuilder.buildGraph(td);
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
-        scheduleTopology(td, partitioning);
+        lastPartitioning.put(td.getId(), partitioning);
+        scheduleTopology(td, partitioning, false);
+
     }
 
     public void reScheduleTopology(TopologyDetails td) {
@@ -166,10 +169,22 @@ public class myScheduler implements IScheduler {
         }
 
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
-        scheduleTopology(td, partitioning);
+
+        boolean isPartitioningImproved = isPartitioningImproved(td.getId(), partitioning);
+        lastPartitioning.put(td.getId(), partitioning);
+        scheduleTopology(td, partitioning, isPartitioningImproved);
     }
 
-    public void scheduleTopology(TopologyDetails td, PartitioningResult partitioning) {
+
+    private boolean isPartitioningImproved(String td, PartitioningResult newPartitioning) {
+        if (newPartitioning.getBestCut() < lastPartitioning.get(td).getBestCut())
+            return true;
+        else
+            return false;
+
+    }
+
+    public void scheduleTopology(TopologyDetails td, PartitioningResult partitioning, boolean rePartitioning) {
         User topologySubmitter = this.schedulingState.userMap.get(td.getTopologySubmitter());
         if (this.schedulingState.cluster.getUnassignedExecutors(td).size() > 0) {
             LOG.debug("/********Scheduling topology {} from User {}************/", td.getName(), topologySubmitter);
@@ -428,7 +443,10 @@ public class myScheduler implements IScheduler {
     private void initialize(Topologies topologies, Cluster cluster) {
         Map<String, User> userMap = getUsers(topologies, cluster);
         this.schedulingState = new SchedulingState(userMap, cluster, topologies, this.conf);
-        lastRescheduledTopologies = new HashMap<>();
+        if (lastRescheduledTopologies == null)
+            lastRescheduledTopologies = new HashMap<>();
+        if (lastPartitioning == null)
+            lastPartitioning = new LinkedHashMap<>();
     }
 
     /**
