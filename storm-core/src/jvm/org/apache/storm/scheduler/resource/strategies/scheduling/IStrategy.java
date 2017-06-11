@@ -48,4 +48,7 @@ public interface IStrategy {
     SchedulingResult schedule(TopologyDetails td);
 
     SchedulingResult schedule(TopologyDetails td, PartitioningResult partitioning);
-}
+
+    SchedulingResult reSchedule(TopologyDetails td, PartitioningResult currentPartitioning, PartitioningResult newPartitioning);
+
+    }

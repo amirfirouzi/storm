@@ -48,6 +48,74 @@ public class myStrategy implements IStrategy {
     }
 
     @Override
+    public SchedulingResult reSchedule(TopologyDetails td, PartitioningResult currentPartitioning, PartitioningResult newPartitioning) {
+
+        if (_nodes.getNodes().size() <= 0) {
+            LOG.warn("No available nodes to schedule tasks on!");
+            return SchedulingResult.failure(SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES, "No available nodes to schedule tasks on!");
+        }
+        Collection<ExecutorDetails> unassignedExecutors = new HashSet<ExecutorDetails>(_cluster.getUnassignedExecutors(td));
+        Map<WorkerSlot, Collection<ExecutorDetails>> schedulerAssignmentMap = new HashMap<>();
+        LOG.debug("ExecutorsNeedScheduling: {}", unassignedExecutors);
+        Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
+        List<Component> spouts = this.getSpouts(td);
+
+        if (spouts.size() == 0) {
+            LOG.error("Cannot find a Spout!");
+            return SchedulingResult.failure(SchedulingStatus.FAIL_INVALID_TOPOLOGY, "Cannot find a Spout!");
+        }
+
+        Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
+
+        for (Map.Entry<Integer, Partition> partition :
+                currentPartitioning.getPartitions().entrySet()) {
+            List<Vertex> currentPartitioningVertices = partition.getValue().getVertices();
+            List<Vertex> newPartitioningVertices = partition.getValue().getVertices();
+            for (Vertex vertex :
+                    newPartitioningVertices) {
+//                if()
+            }
+        }
+
+//        for (Map.Entry<Integer, Partition> partition :
+//                currentPartitioning.getPartitions().entrySet()) {
+//            for (Vertex vertex :
+//                    partition.getValue().getVertices()) {
+//                ExecutorDetails exec = vertex.getExecutor();
+//                LOG.info("Attempting to schedule: {} of component {} [ REQ {} ]",
+//                        exec, td.getExecutorToComponent().get(exec),
+//                        td.getTaskResourceReqList(exec));
+//                scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, partition.getValue());
+//            }
+//
+//        }
+
+        executorsNotScheduled.removeAll(scheduledTasks);
+        LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
+        // schedule left over system tasks
+        for (ExecutorDetails exec : executorsNotScheduled) {
+            scheduleExecutor(exec, td, schedulerAssignmentMap, scheduledTasks);
+        }
+
+        SchedulingResult result;
+        executorsNotScheduled.removeAll(scheduledTasks);
+        if (executorsNotScheduled.size() > 0) {
+            LOG.error("Not all executors successfully scheduled: {}",
+                    executorsNotScheduled);
+            schedulerAssignmentMap = null;
+            result = SchedulingResult.failure(SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES,
+                    (td.getExecutors().size() - unassignedExecutors.size()) + "/" + td.getExecutors().size() + " executors scheduled");
+        } else {
+            LOG.debug("All resources successfully scheduled!");
+            result = SchedulingResult.successWithMsg(schedulerAssignmentMap, "Fully Scheduled by myStrategy");
+        }
+        if (schedulerAssignmentMap == null) {
+            LOG.error("Topology {} not successfully scheduled!", td.getId());
+        }
+        return result;
+    }
+
+    @Override
     public SchedulingResult schedule(TopologyDetails td) {
         return null;
     }

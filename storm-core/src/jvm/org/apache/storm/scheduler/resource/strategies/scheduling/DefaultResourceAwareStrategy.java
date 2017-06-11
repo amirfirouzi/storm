@@ -125,6 +125,11 @@ public class DefaultResourceAwareStrategy implements IStrategy {
         return null;
     }
 
+    @Override
+    public SchedulingResult reSchedule(TopologyDetails td, PartitioningResult currentPartitioning, PartitioningResult newPartitioning) {
+        return null;
+    }
+
     /**
      * Schedule executor exec from topology td
      *

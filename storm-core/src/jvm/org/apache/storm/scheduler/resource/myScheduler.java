@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static org.apache.storm.scheduler.resource.monitoring.Utils.RESCHEDULE_TIMEOUT;
 import static org.apache.storm.scheduler.resource.monitoring.Utils.collectionToString;
 
 public class myScheduler implements IScheduler {
@@ -75,7 +76,7 @@ public class myScheduler implements IScheduler {
         if (!topologies.getTopologies().isEmpty()) {
             int rescheduleTimeout = DEFAULT_RESCHEDULE_TIMEOUT;
             for (TopologyDetails td : topologies.getTopologies()) {
-                rescheduleTimeout = Integer.parseInt(td.getConf().get(org.apache.storm.scheduler.adaptive.Utils.RESCHEDULE_TIMEOUT).toString());
+                rescheduleTimeout = Integer.parseInt(td.getConf().get(RESCHEDULE_TIMEOUT).toString());
                 lastRescheduledTopologies.put(td.getId(), 0L);
 
             }
@@ -153,7 +154,7 @@ public class myScheduler implements IScheduler {
     public void reScheduleTopology(TopologyDetails td) {
 
         Graph graph = TopologyGraphBuilder.buildGraph(td);
-        //TODO: adding weights to graph
+
         List<ExecutorPair> traffic = new ArrayList<>();
         try {
             traffic = DataManager.getInstance().getInterExecutorTrafficList(td.getId());
@@ -166,6 +167,7 @@ public class myScheduler implements IScheduler {
             String to = exec.getDestination().getFullExecutorName();
             int trafficValue = exec.getTraffic();
             graph.getEdgeFromExecutor(from, to).setWeight(trafficValue);
+            //TODO: update vertex weights from monitoring
         }
 
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
@@ -177,6 +179,7 @@ public class myScheduler implements IScheduler {
 
 
     private boolean isPartitioningImproved(String td, PartitioningResult newPartitioning) {
+        //TODO: now only considers crosscut, ADD loads too
         if (newPartitioning.getBestCut() < lastPartitioning.get(td).getBestCut())
             return true;
         else
@@ -186,7 +189,7 @@ public class myScheduler implements IScheduler {
 
     public void scheduleTopology(TopologyDetails td, PartitioningResult partitioning, boolean rePartitioning) {
         User topologySubmitter = this.schedulingState.userMap.get(td.getTopologySubmitter());
-        if (this.schedulingState.cluster.getUnassignedExecutors(td).size() > 0) {
+        if (this.schedulingState.cluster.getUnassignedExecutors(td).size() > 0 || rePartitioning) {
             LOG.debug("/********Scheduling topology {} from User {}************/", td.getName(), topologySubmitter);
 
             SchedulingState schedulingState = checkpointSchedulingState();
@@ -212,7 +215,10 @@ public class myScheduler implements IScheduler {
                     // Pass in a copy of scheduling state since the scheduling strategy should not be able to be able to make modifications to
                     // the state of cluster directly
                     rasStrategy.prepare(new SchedulingState(this.schedulingState));
-                    result = rasStrategy.schedule(td, partitioning);
+                    if (rePartitioning)
+                        result = rasStrategy.reSchedule(td, lastPartitioning.get(td.getId()), partitioning);
+                    else
+                        result = rasStrategy.schedule(td, partitioning);
                 } catch (Exception ex) {
                     LOG.error(String.format("Exception thrown when running strategy %s to schedule topology %s. Topology will not be scheduled!"
                             , rasStrategy.getClass().getName(), td.getName()), ex);
