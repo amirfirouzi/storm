@@ -48,7 +48,9 @@ public class myStrategy implements IStrategy {
     }
 
     @Override
-    public SchedulingResult reSchedule(TopologyDetails td, PartitioningResult currentPartitioning, PartitioningResult newPartitioning) {
+    public SchedulingResult reSchedule(TopologyDetails td,
+                                       PartitioningResult currentPartitioning,
+                                       PartitioningResult newPartitioning) {
 
         if (_nodes.getNodes().size() <= 0) {
             LOG.warn("No available nodes to schedule tasks on!");
@@ -67,28 +69,32 @@ public class myStrategy implements IStrategy {
 
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
 
+
+        //Migration & Cleanup
+        //TODO: should be seperated into several functions
         for (Map.Entry<Integer, Partition> partition :
                 currentPartitioning.getPartitions().entrySet()) {
-            List<Vertex> currentPartitioningVertices = partition.getValue().getVertices();
-            List<Vertex> newPartitioningVertices = partition.getValue().getVertices();
+
+            Partition newPartition = newPartitioning.getPartition(partition.getKey());
+            List<Vertex> currentPartitioningVertices = new ArrayList<>(partition.getValue().getVertices());
+            List<Vertex> newPartitioningVertices = new ArrayList<>(newPartition.getVertices());
+            List<Vertex> toBeRemoved = new ArrayList<>(currentPartitioningVertices);
+            List<Vertex> toBeMigrated = new ArrayList<>(newPartitioningVertices);
+
+            removeSimiliarElements(toBeRemoved, toBeMigrated);
+            removeSimiliarElements(toBeMigrated, currentPartitioningVertices);
+
             for (Vertex vertex :
-                    newPartitioningVertices) {
-//                if()
+                    toBeRemoved) {
+                ExecutorDetails exec = vertex.getExecutor();
+                LOG.info("Attempting to remove: {} of component {} [ REQ {} ] from Node: {} due to migration",
+                        exec, td.getExecutorToComponent().get(exec),
+                        td.getTaskResourceReqList(exec),
+                        partition.getKey());
             }
+
         }
 
-//        for (Map.Entry<Integer, Partition> partition :
-//                currentPartitioning.getPartitions().entrySet()) {
-//            for (Vertex vertex :
-//                    partition.getValue().getVertices()) {
-//                ExecutorDetails exec = vertex.getExecutor();
-//                LOG.info("Attempting to schedule: {} of component {} [ REQ {} ]",
-//                        exec, td.getExecutorToComponent().get(exec),
-//                        td.getTaskResourceReqList(exec));
-//                scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, partition.getValue());
-//            }
-//
-//        }
 
         executorsNotScheduled.removeAll(scheduledTasks);
         LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
@@ -145,6 +151,7 @@ public class myStrategy implements IStrategy {
 
         for (Map.Entry<Integer, Partition> partition :
                 partitioning.getPartitions().entrySet()) {
+
             for (Vertex vertex :
                     partition.getValue().getVertices()) {
                 ExecutorDetails exec = vertex.getExecutor();
@@ -152,6 +159,8 @@ public class myStrategy implements IStrategy {
                         exec, td.getExecutorToComponent().get(exec),
                         td.getTaskResourceReqList(exec));
                 scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, partition.getValue());
+                SupervisorDetails s = _cluster.getSupervisorById(partition.getValue().getNode().getId());
+                System.out.println("");
             }
 
         }
@@ -185,6 +194,59 @@ public class myStrategy implements IStrategy {
             LOG.error("Topology {} not successfully scheduled!", td.getId());
         }
         return result;
+    }
+
+    /**
+     * Migrate executor exec from fromPartition to toPartition based on new Partitioning
+     *
+     * @param exec                   the executor to schedule
+     * @param td                     the topology executor exec is a part of
+     * @param schedulerAssignmentMap the assignments already calculated
+     * @param scheduledTasks         executors that have been scheduled
+     * @param fromPartition          the partition this exec is already placed on
+     * @param toPartition            the new partition that the exec should be migrated to based on new partitioning
+     */
+    private void migrateExecutor(ExecutorDetails exec, TopologyDetails td, Map<WorkerSlot,
+            Collection<ExecutorDetails>> schedulerAssignmentMap,
+                                 Collection<ExecutorDetails> scheduledTasks,
+                                 Partition fromPartition,
+                                 Partition toPartition) {
+        WorkerSlot targetSlot = this.findWorkerForExecWithPartitioning(exec, td, schedulerAssignmentMap, fromPartition);
+        if (targetSlot != null) {
+            RAS_Node targetNode = this.idToNode(targetSlot.getNodeId());
+            if (!schedulerAssignmentMap.containsKey(targetSlot)) {
+                schedulerAssignmentMap.put(targetSlot, new LinkedList<ExecutorDetails>());
+            }
+
+            schedulerAssignmentMap.get(targetSlot).add(exec);
+            targetNode.consumeResourcesforTask(exec, td);
+            scheduledTasks.add(exec);
+            LOG.info("TASK {}:{} assigned to Node: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on slot: {} on Rack: {}", exec, td.getExecutorToComponent().get(exec),
+
+                    targetNode.getHostname(), targetNode.getAvailableMemoryResources(),
+                    targetNode.getAvailableCpuResources(), targetNode.getTotalMemoryResources(),
+                    targetNode.getTotalCpuResources(), targetSlot, nodeToRack(targetNode));
+        } else {
+            LOG.error("Not Enough Resources to schedule Task {}", exec);
+        }
+    }
+
+    /**
+     * Remove the tasks that no longer belong to nodes after/before migration
+     *
+     * @param currentPartition current Partitioning
+     * @param newPartition     new Partitioning
+     */
+    private void cleanupPartitionFromOldTasks(Map<WorkerSlot, Collection<ExecutorDetails>> schedulerAssignmentMap,
+                                              Partition currentPartition, Partition newPartition) {
+        List<Vertex> currentPartitioningVertices = currentPartition.getVertices();
+        for (Vertex vertex :
+                newPartition.getVertices()) {
+            if (currentPartitioningVertices.contains(vertex))
+                currentPartitioningVertices.remove(vertex);
+        }
+
+
     }
 
     /**
@@ -347,6 +409,14 @@ public class myStrategy implements IStrategy {
             }
         }
         return null;
+    }
+
+    public void removeSimiliarElements(List<Vertex> list1, List<Vertex> list2) {
+        for (Vertex item :
+                list2) {
+            if (list1.contains(item))
+                list1.remove(item);
+        }
     }
 
     /**

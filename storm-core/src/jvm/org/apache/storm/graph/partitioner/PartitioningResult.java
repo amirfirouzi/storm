@@ -96,6 +96,10 @@ public class PartitioningResult {
         return partitions;
     }
 
+    public Partition getPartition(Integer nodeId) {
+        return partitions.get(nodeId);
+    }
+
     public void setPartitions(Map<Integer, Partition> partitions) {
         this.partitions = partitions;
     }
