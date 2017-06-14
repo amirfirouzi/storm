@@ -43,7 +43,7 @@ public class myScheduler implements IScheduler {
     // Object that holds the current scheduling state
     private SchedulingState schedulingState;
     private static final int DEFAULT_RESCHEDULE_TIMEOUT = 180;
-    private Map<String, Long> lastRescheduledTopologies;
+//    private Map<String, Long> lastRescheduledTopologies;
     private Map<String, PartitioningResult> lastPartitioning;
     private long lastRescheduling;
 
@@ -77,7 +77,7 @@ public class myScheduler implements IScheduler {
             int rescheduleTimeout = DEFAULT_RESCHEDULE_TIMEOUT;
             for (TopologyDetails td : topologies.getTopologies()) {
                 rescheduleTimeout = Integer.parseInt(td.getConf().get(RESCHEDULE_TIMEOUT).toString());
-                lastRescheduledTopologies.put(td.getId(), 0L);
+//                lastRescheduledTopologies.put(td.getId(), 0L);
 
             }
             long now = System.currentTimeMillis();
@@ -109,7 +109,7 @@ public class myScheduler implements IScheduler {
                     initialScheduleTopology(td);
 //                trafficImprovement = Integer.parseInt(topology.getConf().get(TRAFFIC_IMPROVEMENT).toString());
                 }
-                lastRescheduledTopologies.put(td.getId(), System.currentTimeMillis());
+//                lastRescheduledTopologies.put(td.getId(), System.currentTimeMillis());
                 lastRescheduling = System.currentTimeMillis();
                 topologiesToBeRemoved.remove(td.getId());
                 LOG.debug("Configuration of topology " + td.getId());
@@ -449,8 +449,8 @@ public class myScheduler implements IScheduler {
     private void initialize(Topologies topologies, Cluster cluster) {
         Map<String, User> userMap = getUsers(topologies, cluster);
         this.schedulingState = new SchedulingState(userMap, cluster, topologies, this.conf);
-        if (lastRescheduledTopologies == null)
-            lastRescheduledTopologies = new HashMap<>();
+//        if (lastRescheduledTopologies == null)
+//            lastRescheduledTopologies = new HashMap<>();
         if (lastPartitioning == null)
             lastPartitioning = new LinkedHashMap<>();
     }

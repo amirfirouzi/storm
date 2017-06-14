@@ -69,8 +69,7 @@ public class myStrategy implements IStrategy {
 
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
 
-
-        //Migration & Cleanup
+        //region Migration & Cleanup
         //TODO: should be seperated into several functions
         for (Map.Entry<Integer, Partition> partition :
                 currentPartitioning.getPartitions().entrySet()) {
@@ -84,6 +83,8 @@ public class myStrategy implements IStrategy {
             removeSimiliarElements(toBeRemoved, toBeMigrated);
             removeSimiliarElements(toBeMigrated, currentPartitioningVertices);
 
+            //region Remove Old Tasks
+            //Remove toBeRemoved Tasks from current partitions & Free Resources
             for (Vertex vertex :
                     toBeRemoved) {
                 ExecutorDetails exec = vertex.getExecutor();
@@ -91,10 +92,49 @@ public class myStrategy implements IStrategy {
                         exec, td.getExecutorToComponent().get(exec),
                         td.getTaskResourceReqList(exec),
                         partition.getKey());
+                if (_cluster.getAssignments() != null) {
+                    partition.getValue().getNode().freeResourcesForTask(exec, td);
+                    WorkerSlot targetSlot = _cluster.getAssignments().get(td.getId()).getExecutorToSlot().get(exec);
+                    if (schedulerAssignmentMap.containsKey(targetSlot)) {
+                        schedulerAssignmentMap.get(targetSlot).remove(exec);
+                    }
+                    if(scheduledTasks.contains(exec))
+                        scheduledTasks.remove(exec);
+                }
+                //add toBeMigrated execs to current partition's node
+                //  scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, newPartitioning.getValue());
             }
+            //endregion
 
+            //region Migrate New Tasks
+            //Add toBeMigrated Tasks To newPartition & Consume Resources for it
+            for (Vertex vertex :
+                    toBeMigrated) {
+                ExecutorDetails exec = vertex.getExecutor();
+                LOG.info("Attempting to migrate: {} of component {} [ REQ {} ] from Node: {} to Node: {}",
+                        exec, td.getExecutorToComponent().get(exec),
+                        td.getTaskResourceReqList(exec),
+                        partition.getKey(),
+                        newPartition.getNode().getId());
+
+
+                if (_cluster.getAssignments() != null) {
+                    newPartition.getNode().consumeResourcesforTask(exec, td);
+                    WorkerSlot targetSlot = _cluster.getAssignments().get(td.getId()).getExecutorToSlot().get(exec);
+                    if (schedulerAssignmentMap.containsKey(targetSlot)) {
+                        schedulerAssignmentMap.get(targetSlot).remove(exec);
+                    }else{
+                        schedulerAssignmentMap.put(targetSlot, new LinkedList<ExecutorDetails>());
+                    }
+                    if(scheduledTasks.contains(exec))
+                        scheduledTasks.remove(exec);
+                }
+                //add toBeMigrated execs to current partition's node
+                //  scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, newPartitioning.getValue());
+            }
+            //endregion
         }
-
+        //endregion
 
         executorsNotScheduled.removeAll(scheduledTasks);
         LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
@@ -160,6 +200,7 @@ public class myStrategy implements IStrategy {
                         td.getTaskResourceReqList(exec));
                 scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, partition.getValue());
                 SupervisorDetails s = _cluster.getSupervisorById(partition.getValue().getNode().getId());
+
                 System.out.println("");
             }
 
@@ -193,6 +234,7 @@ public class myStrategy implements IStrategy {
         if (schedulerAssignmentMap == null) {
             LOG.error("Topology {} not successfully scheduled!", td.getId());
         }
+        Map<String, SupervisorDetails> supervisors = _cluster.getSupervisors();
         return result;
     }
 
@@ -324,26 +366,14 @@ public class myStrategy implements IStrategy {
     private WorkerSlot findWorkerForExecWithPartitioning(ExecutorDetails exec, TopologyDetails td,
                                                          Map<WorkerSlot, Collection<ExecutorDetails>> scheduleAssignmentMap,
                                                          Partition partition) {
-
-        // iterate through an ordered list of all racks available to make sure we cannot schedule the first executor in any rack before we "give up"
-        // the list is ordered in decreasing order of effective resources. With the rack in the front of the list having the most effective resources.
-//        if (_sortedRacks == null) {
-//            _sortedRacks = sortRacks(td.getId(), scheduleAssignmentMap);
-//        }
-//
-//
-//        if (!_rackIdToSortedNodes.containsKey(rackId)) {
-//            _rackIdToSortedNodes.put(rackId, sortNodes(this.getAvailableNodesFromRack(rackId), rackId, td.getId(), scheduleAssignmentMap));
-//        }
-//        TreeSet<ObjectResources> sortedNodes = _rackIdToSortedNodes.get(rackId);
-
         double taskMem = td.getTotalMemReqTask(exec);
         double taskCPU = td.getTotalCpuReqTask(exec);
 
         RAS_Node node = partition.getNode();
+        //TODO: the slots that already contain execs from this partition should be the priority
         if (node.getAvailableCpuResources() >= taskCPU && node.getAvailableMemoryResources() >= taskMem && node.getFreeSlots().size() > 0) {
             for (WorkerSlot ws : node.getFreeSlots()) {
-                //ToDo: only considers memory - Add Cpu Availibility too
+                //ToDo: only considers memory - Add Cpu Availibility Constraints
                 if (checkWorkerConstraints(exec, ws, td, scheduleAssignmentMap)) {
                     return ws;
                 }

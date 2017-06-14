@@ -490,9 +490,6 @@ public class LocalCluster implements ILocalCluster {
             throw new IllegalArgumentException("Topology conf is not json-serializable");
         }
 
-        //build graph structure from topology
-//        TopologyGraphBuilder.buildGraph(topology);
-
         getNimbus().submitTopology(topologyName, null, JSONValue.toJSONString(conf), topology);
         
         ISubmitterHook hook = (ISubmitterHook) Utils.getConfiguredClass(conf, Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN);

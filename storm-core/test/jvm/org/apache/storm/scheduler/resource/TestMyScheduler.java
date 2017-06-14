@@ -37,96 +37,101 @@ import static org.apache.storm.scheduler.resource.monitoring.Utils.RESCHEDULE_TI
 
 public class TestMyScheduler {
 
-  private final String TOPOLOGY_SUBMITTER = "jerry";
+    private final String TOPOLOGY_SUBMITTER = "jerry";
 
-  private static final Logger LOG = LoggerFactory.getLogger(TestMyScheduler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestMyScheduler.class);
 
-  private static int currentTime = 1450418597;
+    private static int currentTime = 1450418597;
 
-  private static final Config defaultTopologyConf = new Config();
+    private static final Config defaultTopologyConf = new Config();
 
-  @BeforeClass
-  public static void initConf() {
-    defaultTopologyConf.put(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN, "org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping");
-    defaultTopologyConf.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
-    defaultTopologyConf.put(Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy.class.getName());
+    @BeforeClass
+    public static void initConf() {
+        defaultTopologyConf.put(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN, "org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping");
+        defaultTopologyConf.put(Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
+        defaultTopologyConf.put(Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy.class.getName());
 
-    defaultTopologyConf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, org.apache.storm.scheduler.resource.strategies.scheduling.myStrategy.class.getName());
-    defaultTopologyConf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10.0);
-    defaultTopologyConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 128.0);
-    defaultTopologyConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
-    defaultTopologyConf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 8192.0);
-    defaultTopologyConf.put(Config.TOPOLOGY_PRIORITY, 0);
-    defaultTopologyConf.put(Config.TOPOLOGY_SUBMITTER_USER, "amir");
-    defaultTopologyConf.put(RESCHEDULE_TIMEOUT, 10);
+        defaultTopologyConf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, org.apache.storm.scheduler.resource.strategies.scheduling.myStrategy.class.getName());
+        defaultTopologyConf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10.0);
+        defaultTopologyConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 128.0);
+        defaultTopologyConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
+        defaultTopologyConf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 8192.0);
+        defaultTopologyConf.put(Config.TOPOLOGY_PRIORITY, 0);
+        defaultTopologyConf.put(Config.TOPOLOGY_SUBMITTER_USER, "amir");
+        defaultTopologyConf.put(RESCHEDULE_TIMEOUT, 10);
 
-  }
+        defaultTopologyConf.put("jdbc.driver", "com.mysql.jdbc.Driver");
+        defaultTopologyConf.put("data.connection.uri", "jdbc:mysql://localhost/stormscheduler?user=stormuser&password=123456");
+        defaultTopologyConf.put("validation.query", "SELECT");
+        defaultTopologyConf.put("node-name", "amir-pc");
 
-  @Test
-  public void testHeterogeneousCluster() {
-    INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
-    Map<String, Number> resourceMap1 = new HashMap<>(); // strong supervisor node
-    resourceMap1.put(Config.SUPERVISOR_CPU_CAPACITY, 900.0);
-    resourceMap1.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 4096.0);
-    Map<String, Number> resourceMap2 = new HashMap<>(); // weak supervisor node
-    resourceMap2.put(Config.SUPERVISOR_CPU_CAPACITY, 500.0);
-    resourceMap2.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1500.0);
-
-    Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
-    for (int i = 0; i < 2; i++) {
-      List<Number> ports = new LinkedList<Number>();
-      for (int j = 0; j < 4; j++) {
-        ports.add(j);
-      }
-      SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, (Map) (i == 0 ? resourceMap1 : resourceMap2));
-      supMap.put(sup.getId(), sup);
     }
 
-    // topo1 has one single huge task that can not be handled by the small-super
-    TopologyBuilder builder1 = new TopologyBuilder();
-    builder1.setSpout("a", new TestWordSpout(), 1)
-        .setCPULoad(150)
-        .setMemoryLoad(1024);
-    builder1.setBolt("b", new TestWordCounter(), 2).fieldsGrouping("a", new Fields("word"))
-        .setCPULoad(200)
-        .setMemoryLoad(768);
-    builder1.setBolt("c", new TestWordCounter(), 2).allGrouping("b")
-        .setCPULoad(300)
-        .setMemoryLoad(256);
+    @Test
+    public void testHeterogeneousCluster() {
+        INimbus iNimbus = new TestUtilsFormyScheduler.INimbusTest();
+        Map<String, Number> resourceMap1 = new HashMap<>(); // strong supervisor node
+        resourceMap1.put(Config.SUPERVISOR_CPU_CAPACITY, 900.0);
+        resourceMap1.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 4096.0);
+        Map<String, Number> resourceMap2 = new HashMap<>(); // weak supervisor node
+        resourceMap2.put(Config.SUPERVISOR_CPU_CAPACITY, 500.0);
+        resourceMap2.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1500.0);
+
+        Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
+        for (int i = 0; i < 2; i++) {
+            List<Number> ports = new LinkedList<Number>();
+            for (int j = 0; j < 4; j++) {
+                ports.add(j);
+            }
+            SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, (Map) (i == 0 ? resourceMap1 : resourceMap2));
+            supMap.put(sup.getId(), sup);
+        }
+
+        // topo1 has one single huge task that can not be handled by the small-super
+        TopologyBuilder builder1 = new TopologyBuilder();
+        builder1.setSpout("a", new TestWordSpout(), 1)
+                .setCPULoad(150)
+                .setMemoryLoad(1024);
+        builder1.setBolt("b", new TestWordCounter(), 2).fieldsGrouping("a", new Fields("word"))
+                .setCPULoad(200)
+                .setMemoryLoad(768);
+        builder1.setBolt("c", new TestWordCounter(), 2).allGrouping("b")
+                .setCPULoad(300)
+                .setMemoryLoad(256);
 
 
-    StormTopology stormTopology1 = builder1.createTopology();
+        StormTopology stormTopology1 = builder1.createTopology();
 
-    Config config1 = new Config();
-    config1.putAll(defaultTopologyConf);
-    Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology1);
-    TopologyDetails topology1 = new TopologyDetails("topology1", config1, stormTopology1, 1, executorMap1, 0);
+        Config config1 = new Config();
+        config1.putAll(defaultTopologyConf);
+        Map<ExecutorDetails, String> executorMap1 = TestUtilsFormyScheduler.genExecsAndComps(stormTopology1);
+        TopologyDetails topology1 = new TopologyDetails("topology1", config1, stormTopology1, 1, executorMap1, 0);
 
-    // Test1: Launch topo 1-3 together, it should be able to use up either mem or cpu resource due to exact division
-    Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config1);
-    myScheduler rs = new myScheduler();
-    Map<String, TopologyDetails> topoMap = new HashMap<>();
-    topoMap.put(topology1.getId(), topology1);
+        // Test1: Launch topo 1-3 together, it should be able to use up either mem or cpu resource due to exact division
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config1);
+        myScheduler rs = new myScheduler();
+        Map<String, TopologyDetails> topoMap = new HashMap<>();
+        topoMap.put(topology1.getId(), topology1);
 //        topoMap.put(topology2.getId(), topology2);
 //        topoMap.put(topology3.getId(), topology3);
-    Topologies topologies = new Topologies(topoMap);
-    rs.prepare(config1);
-    rs.schedule(topologies, cluster);
+        Topologies topologies = new Topologies(topoMap);
+        rs.prepare(config1);
+        rs.schedule(topologies, cluster);
 
-    Assert.assertEquals("Running - Fully Scheduled by myStrategy", cluster.getStatusMap().get(topology1.getId()));
+        Assert.assertEquals("Running - Fully Scheduled by myStrategy", cluster.getStatusMap().get(topology1.getId()));
 //        Assert.assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology2.getId()));
 //        Assert.assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology3.getId()));
 
-    Map<SupervisorDetails, Double> superToCpu = TestUtilsFormyScheduler.getSupervisorToCpuUsage(cluster, topologies);
-    Map<SupervisorDetails, Double> superToMem = TestUtilsFormyScheduler.getSupervisorToMemoryUsage(cluster, topologies);
+        Map<SupervisorDetails, Double> superToCpu = TestUtilsFormyScheduler.getSupervisorToCpuUsage(cluster, topologies);
+        Map<SupervisorDetails, Double> superToMem = TestUtilsFormyScheduler.getSupervisorToMemoryUsage(cluster, topologies);
 
-    SchedulerAssignment assignment1 = cluster.getAssignmentById(topology1.getId());
-    Set<WorkerSlot> assignedSlots1 = assignment1.getSlots();
+        SchedulerAssignment assignment1 = cluster.getAssignmentById(topology1.getId());
+        Set<WorkerSlot> assignedSlots1 = assignment1.getSlots();
 
-    for (WorkerSlot slot : assignedSlots1) {
-      System.out.println(slot);
+        for (WorkerSlot slot : assignedSlots1) {
+            System.out.println(slot);
+        }
+        // end of Test1
+
     }
-    // end of Test1
-
-  }
 }

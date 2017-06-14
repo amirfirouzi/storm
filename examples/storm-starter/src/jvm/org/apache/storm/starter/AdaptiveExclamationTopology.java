@@ -163,7 +163,7 @@ public class AdaptiveExclamationTopology {
         //conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy.class);
 
         if (args != null && args.length > 0) {
-            conf.setNumWorkers(3);
+//            conf.setNumWorkers(3);
 
             StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
         } else {
