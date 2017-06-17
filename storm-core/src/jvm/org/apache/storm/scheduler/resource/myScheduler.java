@@ -43,7 +43,7 @@ public class myScheduler implements IScheduler {
     // Object that holds the current scheduling state
     private SchedulingState schedulingState;
     private static final int DEFAULT_RESCHEDULE_TIMEOUT = 180;
-//    private Map<String, Long> lastRescheduledTopologies;
+    //    private Map<String, Long> lastRescheduledTopologies;
     private Map<String, PartitioningResult> lastPartitioning;
     private long lastRescheduling;
 
@@ -96,38 +96,44 @@ public class myScheduler implements IScheduler {
         List<String> dbTopologies = null;
         try {
             dbTopologies = DataManager.getInstance().getTopologies();
-            LOG.info("DB Topologies: " + collectionToString(dbTopologies));
-
-            // get topologies from Storm and identify topologies to be deleted
-            List<String> topologiesToBeRemoved = new ArrayList<String>(dbTopologies);
-//            int trafficImprovement = 0;
-            for (TopologyDetails td : topologies.getTopologies()) {
-
-                if (dbTopologies.contains(td.getId())) {// ReScheduling this topology(RePartitioning)
-                    reScheduleTopology(td);
-                } else {// First Time To Schedule this topology(initial Partitioning)
-                    initialScheduleTopology(td);
-//                trafficImprovement = Integer.parseInt(topology.getConf().get(TRAFFIC_IMPROVEMENT).toString());
-                }
-//                lastRescheduledTopologies.put(td.getId(), System.currentTimeMillis());
-                lastRescheduling = System.currentTimeMillis();
-                topologiesToBeRemoved.remove(td.getId());
-                LOG.debug("Configuration of topology " + td.getId());
-                for (Object key : td.getConf().keySet())
-                    LOG.debug("- " + key + ": " + td.getConf().get(key));
-            }
-
-            dbTopologies.removeAll(topologiesToBeRemoved);
-            LOG.info("Topologies to be removed from DB: " + collectionToString(topologiesToBeRemoved));
-
-            // remove topologies from DB
-            if (!topologiesToBeRemoved.isEmpty()) {
-                DataManager.getInstance().removeTopologies(topologiesToBeRemoved);
-                LOG.info("Topologies succesfully removed from DB");
-            }
         } catch (Exception e) {
+            dbTopologies = new ArrayList<>();
             e.printStackTrace();
         }
+        LOG.info("DB Topologies: " + collectionToString(dbTopologies));
+
+        // get topologies from Storm and identify topologies to be deleted
+        List<String> topologiesToBeRemoved = new ArrayList<String>(dbTopologies);
+//            int trafficImprovement = 0;
+        for (TopologyDetails td : topologies.getTopologies()) {
+
+            if (dbTopologies.contains(td.getId())) {// ReScheduling this topology(RePartitioning)
+                reScheduleTopology(td);
+            } else {// First Time To Schedule this topology(initial Partitioning)
+                initialScheduleTopology(td);
+//                trafficImprovement = Integer.parseInt(topology.getConf().get(TRAFFIC_IMPROVEMENT).toString());
+            }
+//                lastRescheduledTopologies.put(td.getId(), System.currentTimeMillis());
+            lastRescheduling = System.currentTimeMillis();
+            topologiesToBeRemoved.remove(td.getId());
+            LOG.debug("Configuration of topology " + td.getId());
+            for (Object key : td.getConf().keySet())
+                LOG.debug("- " + key + ": " + td.getConf().get(key));
+        }
+
+        dbTopologies.removeAll(topologiesToBeRemoved);
+        LOG.info("Topologies to be removed from DB: " + collectionToString(topologiesToBeRemoved));
+
+        // remove topologies from DB
+        if (!topologiesToBeRemoved.isEmpty()) {
+            try {
+                DataManager.getInstance().removeTopologies(topologiesToBeRemoved);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            LOG.info("Topologies succesfully removed from DB");
+        }
+
     }
 
     private void updateChanges(Cluster cluster, Topologies topologies) {
@@ -171,18 +177,17 @@ public class myScheduler implements IScheduler {
         }
 
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
-
         boolean isPartitioningImproved = isPartitioningImproved(td.getId(), partitioning);
-        lastPartitioning.put(td.getId(), partitioning);
         scheduleTopology(td, partitioning, isPartitioningImproved);
     }
 
 
-    private boolean isPartitioningImproved(String td, PartitioningResult newPartitioning) {
+    public boolean isPartitioningImproved(String td, PartitioningResult newPartitioning) {
         //TODO: now only considers crosscut, ADD loads too
-        if (newPartitioning.getBestCut() < lastPartitioning.get(td).getBestCut())
+        if (newPartitioning.getBestCut() < lastPartitioning.get(td).getBestCut()) {
+            lastPartitioning.put(td, newPartitioning);
             return true;
-        else
+        } else
             return false;
 
     }
@@ -487,6 +492,10 @@ public class myScheduler implements IScheduler {
             }
         }
         return ret;
+    }
+
+    public SchedulingState getSchedulingState() {
+        return this.schedulingState;
     }
 
     private SchedulingState checkpointSchedulingState() {

@@ -34,7 +34,7 @@ public class Partitioner {
         //endregion
 
         //region ACO Parameters
-        int maxIt = 10;      // Maximum Number of Iterations
+        int maxIt = 100;      // Maximum Number of Iterations
         int nAnt = 100;        // Number of Ants (Population Size)
         int Q = 1;
 

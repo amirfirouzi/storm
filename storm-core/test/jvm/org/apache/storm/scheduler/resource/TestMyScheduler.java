@@ -20,6 +20,11 @@ package org.apache.storm.scheduler.resource;
 
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.graph.Graph;
+import org.apache.storm.graph.TopologyGraphBuilder;
+import org.apache.storm.graph.partitioner.CostFunction;
+import org.apache.storm.graph.partitioner.Partitioner;
+import org.apache.storm.graph.partitioner.PartitioningResult;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
@@ -74,13 +79,14 @@ public class TestMyScheduler {
         resourceMap1.put(Config.SUPERVISOR_CPU_CAPACITY, 900.0);
         resourceMap1.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 4096.0);
         Map<String, Number> resourceMap2 = new HashMap<>(); // weak supervisor node
-        resourceMap2.put(Config.SUPERVISOR_CPU_CAPACITY, 500.0);
-        resourceMap2.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1500.0);
+        resourceMap2.put(Config.SUPERVISOR_CPU_CAPACITY, 700.0);
+        resourceMap2.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 2000.0);
 
         Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
         for (int i = 0; i < 2; i++) {
+            int numberOfPorts = 4;
             List<Number> ports = new LinkedList<Number>();
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < numberOfPorts - i; j++) {
                 ports.add(j);
             }
             SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, (Map) (i == 0 ? resourceMap1 : resourceMap2));
@@ -91,13 +97,13 @@ public class TestMyScheduler {
         TopologyBuilder builder1 = new TopologyBuilder();
         builder1.setSpout("a", new TestWordSpout(), 1)
                 .setCPULoad(150)
-                .setMemoryLoad(1024);
+                .setMemoryLoad(1000);
         builder1.setBolt("b", new TestWordCounter(), 2).fieldsGrouping("a", new Fields("word"))
                 .setCPULoad(200)
-                .setMemoryLoad(768);
+                .setMemoryLoad(500);
         builder1.setBolt("c", new TestWordCounter(), 2).allGrouping("b")
                 .setCPULoad(300)
-                .setMemoryLoad(256);
+                .setMemoryLoad(600);
 
 
         StormTopology stormTopology1 = builder1.createTopology();
@@ -115,8 +121,29 @@ public class TestMyScheduler {
 //        topoMap.put(topology2.getId(), topology2);
 //        topoMap.put(topology3.getId(), topology3);
         Topologies topologies = new Topologies(topoMap);
+
         rs.prepare(config1);
         rs.schedule(topologies, cluster);
+
+
+        //region prepare for reScheduling
+        Graph graph = TopologyGraphBuilder.buildGraph(topology1);
+
+        graph.getEdgeFromExecutor(generateExecName(0), generateExecName(1)).setWeight(100);
+        graph.getEdgeFromExecutor(generateExecName(0), generateExecName(2)).setWeight(100);
+        graph.getEdgeFromExecutor(generateExecName(1), generateExecName(3)).setWeight(10);
+        graph.getEdgeFromExecutor(generateExecName(1), generateExecName(4)).setWeight(10);
+        graph.getEdgeFromExecutor(generateExecName(2), generateExecName(3)).setWeight(10);
+        graph.getEdgeFromExecutor(generateExecName(2), generateExecName(4)).setWeight(10);
+        //TODO: update vertex weights from monitoring
+
+
+        SchedulingState schedulingState = rs.getSchedulingState();
+        PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
+        boolean isPartitioningImproved = rs.isPartitioningImproved(topology1.getId(), partitioning);
+        rs.scheduleTopology(topology1, partitioning, isPartitioningImproved);
+        //end region
+
 
         Assert.assertEquals("Running - Fully Scheduled by myStrategy", cluster.getStatusMap().get(topology1.getId()));
 //        Assert.assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology2.getId()));
@@ -133,5 +160,9 @@ public class TestMyScheduler {
         }
         // end of Test1
 
+    }
+
+    private String generateExecName(int number) {
+        return "[" + number + ", " + number + "]";
     }
 }

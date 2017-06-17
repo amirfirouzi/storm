@@ -18,6 +18,8 @@
 package org.apache.storm.testing;
 
 import org.apache.storm.Config;
+import org.apache.storm.scheduler.resource.monitoring.TaskMonitor;
+import org.apache.storm.scheduler.resource.monitoring.WorkerMonitor;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import java.util.Map;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -36,6 +38,9 @@ public class TestWordSpout extends BaseRichSpout {
     public static Logger LOG = LoggerFactory.getLogger(TestWordSpout.class);
     boolean _isDistributed;
     SpoutOutputCollector _collector;
+    //region monitoring
+    private TaskMonitor taskMonitor;
+    //endregion monitoring
 
     public TestWordSpout() {
         this(true);
@@ -47,6 +52,12 @@ public class TestWordSpout extends BaseRichSpout {
         
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
+        //region monitoring
+        //register this spout instance (task) to the java process monitor
+        WorkerMonitor.getInstance().setContextInfo(context);
+        //create the object required to notify relevant events (also notify thread ID)
+        taskMonitor = new TaskMonitor(context.getThisTaskId());
+        //endregion
     }
     
     public void close() {
@@ -58,6 +69,9 @@ public class TestWordSpout extends BaseRichSpout {
         final String[] words = new String[] {"nathan", "mike", "jackson", "golda", "bertels"};
         final Random rand = new Random();
         final String word = words[rand.nextInt(words.length)];
+        //region monitoring
+        taskMonitor.checkThreadId();
+        //endregion
         _collector.emit(new Values(word));
     }
     

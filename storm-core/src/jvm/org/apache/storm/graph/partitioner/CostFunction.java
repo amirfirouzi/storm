@@ -21,18 +21,18 @@ public class CostFunction {
 
     public CostResult CalculateCost(int[] selection, costMode mode) {
         //Load Threshold for Resources type 1(CPU) & 2(RAM)
-        float LTR1 = 1.0f;
-        float LTR2 = 0.9f;
+        float loadThresholdCPU = 1.0f;
+        float loadThresholdMEM = 0.9f;
 
         int crosscut = 0;
         float capacityViolation = 0;
         this.selection = selection;
         this.partitions = new HashMap();
         //List<Integer> internal = new ArrayList();
-        List<Integer> loadR1 = new ArrayList();
-        List<Integer> loadR2 = new ArrayList();
-        int[] capacityR1 = model.getM1();
-        int[] capacityR2 = model.getM2();
+        List<Integer> loadCPU = new ArrayList();
+        List<Integer> loadMEM = new ArrayList();
+        int[] capacityCPU = model.getM1();
+        int[] capacityMEM = model.getM2();
         int disconnectedPartitions = 0;
         for (int i = 0; i < model.getnMachines(); i++) {
             List<Integer> partitionTasks = find(selection, i);
@@ -42,48 +42,48 @@ public class CostFunction {
                 boolean connected = isConnected(model.getAdjacency(), partitionTasks);
                 disconnectedPartitions += (!connected ? 1 : 0);
                 //internal.add(InternalCommunication(partitionTasks, model.getAdjacency()));
-                loadR1.add(InternalLoad(partitionTasks, model.getR1()));
-                loadR2.add(InternalLoad(partitionTasks, model.getR2()));
+                loadCPU.add(InternalLoad(partitionTasks, model.getR1()));
+                loadMEM.add(InternalLoad(partitionTasks, model.getR2()));
                 if (mode != costMode.LoadBalanced)
                     crosscut += ExternalCommunication(partitionTasks, model.getAdjacency());
 
                 //Add to Cost if selection violates the usage of Resources(more that capacity)
-                if (loadR1.get(i) > capacityR1[i] * LTR1) {
-                    capacityViolation += ((loadR1.get(i) / (capacityR1[i] * LTR1)) - 1) * 100;
+                if (loadCPU.get(i) > capacityCPU[i] * loadThresholdCPU) {
+                    capacityViolation += ((loadCPU.get(i) / (capacityCPU[i] * loadThresholdCPU)) - 1) * 100;
                 }
-                if (loadR2.get(i) > capacityR2[i] * LTR2) {
-                    capacityViolation += ((loadR2.get(i) / (capacityR2[i] * LTR2)) - 1) * 100;
+                if (loadMEM.get(i) > capacityMEM[i] * loadThresholdMEM) {
+                    capacityViolation += ((loadMEM.get(i) / (capacityMEM[i] * loadThresholdMEM)) - 1) * 100;
                 }
             } else {
                 //internal.add(0);
-                loadR1.add(0);
-                loadR2.add(0);
+                loadCPU.add(0);
+                loadMEM.add(0);
             }
         }
 
         //ToDo: Consider effect of disconnected Vertices in partitions
 
         //Calculate load balancing violations
-        double balancingViolationR1 = 0;
-        double balancingViolationR2 = 0;
+        double balancingViolationCPU = 0;
+        double balancingViolationMEM = 0;
 
         if (mode != costMode.BestCut) {
-            double avgLoadR1 = 0;
-            double avgLoadR2 = 0;
+            double avgLoadCPU = 0;
+            double avgLoadMEM = 0;
             for (int i = 0; i < model.getnMachines(); i++) {
-                avgLoadR1 += loadR1.get(i);
-                avgLoadR2 += loadR2.get(i);
+                avgLoadCPU += loadCPU.get(i);
+                avgLoadMEM += loadMEM.get(i);
             }
-            avgLoadR1 = avgLoadR1 / model.getnMachines();
-            avgLoadR2 = avgLoadR2 / model.getnMachines();
+            avgLoadCPU = avgLoadCPU / model.getnMachines();
+            avgLoadMEM = avgLoadMEM / model.getnMachines();
 
 
             for (int i = 0; i < model.getnMachines(); i++) {
-                balancingViolationR1 += Math.pow(loadR1.get(i) - avgLoadR1, 2);
-                balancingViolationR2 += Math.pow(loadR2.get(i) - avgLoadR2, 2);
+                balancingViolationCPU += Math.pow(loadCPU.get(i) - avgLoadCPU, 2);
+                balancingViolationMEM += Math.pow(loadMEM.get(i) - avgLoadMEM, 2);
             }
-            balancingViolationR1 = Math.sqrt(balancingViolationR1) / model.getnMachines();
-            balancingViolationR2 = Math.sqrt(balancingViolationR2) / model.getnMachines();
+            balancingViolationCPU = Math.sqrt(balancingViolationCPU) / model.getnMachines();
+            balancingViolationMEM = Math.sqrt(balancingViolationMEM) / model.getnMachines();
         }
         //loadEffectRatio: effect of load (loadViolation & capacityViolation) on cost
         float loadEffectRatio = 1.5f;
@@ -102,10 +102,10 @@ public class CostFunction {
         //ToDo: effect of InternalCommunication(calculated but not used)
         double z = (loadEffectRatio * capacityViolation) + //Capacity Violation Cost
                 (crosscutEffectRatio * crosscut) + //crosscut Cost
-                (loadEffectRatio * ((balancingViolationR1) + (balancingViolationR2)) / 2) + //load balancing cost
+                (loadEffectRatio * ((balancingViolationCPU) + (balancingViolationMEM)) / 2) + //load balancing cost
                 (disconnectedPartitions * disconnectivityEffect);
 
-        return new CostResult(loadR1, loadR2, crosscut, selection, z);
+        return new CostResult(loadCPU, loadMEM, crosscut, selection, z);
     }
 
 

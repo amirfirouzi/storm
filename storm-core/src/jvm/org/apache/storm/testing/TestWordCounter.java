@@ -17,6 +17,8 @@
  */
 package org.apache.storm.testing;
 
+import org.apache.storm.scheduler.resource.monitoring.TaskMonitor;
+import org.apache.storm.scheduler.resource.monitoring.WorkerMonitor;
 import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
@@ -34,9 +36,18 @@ public class TestWordCounter extends BaseBasicBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
 
     Map<String, Integer> _counts;
-    
+    //region monitoring
+    private TaskMonitor taskMonitor;
+    //endregion monitoring
+
     public void prepare(Map stormConf, TopologyContext context) {
         _counts = new HashMap<String, Integer>();
+        //region monitoring
+        // register this spout instance (task) to the java process monitor
+        WorkerMonitor.getInstance().setContextInfo(context);
+        // create the object for notifying relevant events (received tuple, which in turn notifies thread ID)
+        taskMonitor = new TaskMonitor(context.getThisTaskId());
+        //endregion monitoring
     }
 
     protected String getTupleValue(Tuple t, int idx) {
@@ -44,6 +55,9 @@ public class TestWordCounter extends BaseBasicBolt {
     }
     
     public void execute(Tuple input, BasicOutputCollector collector) {
+        //region monitoring
+        taskMonitor.notifyTupleReceived(input);
+        //endregion monitoring
         String word = getTupleValue(input, 0);
         int count = 0;
         if(_counts.containsKey(word)) {

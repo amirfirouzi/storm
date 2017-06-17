@@ -56,8 +56,9 @@ public class myStrategy implements IStrategy {
             LOG.warn("No available nodes to schedule tasks on!");
             return SchedulingResult.failure(SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES, "No available nodes to schedule tasks on!");
         }
+        Map<WorkerSlot, Collection<ExecutorDetails>> oldSchedulerAssignmentMap = _cluster.getAssignments().get(td.getId()).getSlotToExecutors();
         Collection<ExecutorDetails> unassignedExecutors = new HashSet<ExecutorDetails>(_cluster.getUnassignedExecutors(td));
-        Map<WorkerSlot, Collection<ExecutorDetails>> schedulerAssignmentMap = new HashMap<>();
+
         LOG.debug("ExecutorsNeedScheduling: {}", unassignedExecutors);
         Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
         List<Component> spouts = this.getSpouts(td);
@@ -69,6 +70,8 @@ public class myStrategy implements IStrategy {
 
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
 
+        Map<Integer, Partition> currentPartitions = currentPartitioning.getPartitions();
+        Map<ExecutorDetails, WorkerSlot> executorToWorkerSlotMap = _cluster.getAssignments().get(td.getId()).getExecutorToSlot();
         //region Migration & Cleanup
         //TODO: should be seperated into several functions
         for (Map.Entry<Integer, Partition> partition :
@@ -77,64 +80,33 @@ public class myStrategy implements IStrategy {
             Partition newPartition = newPartitioning.getPartition(partition.getKey());
             List<Vertex> currentPartitioningVertices = new ArrayList<>(partition.getValue().getVertices());
             List<Vertex> newPartitioningVertices = new ArrayList<>(newPartition.getVertices());
-            List<Vertex> toBeRemoved = new ArrayList<>(currentPartitioningVertices);
+            List<Vertex> toBeRemoved = new ArrayList<>(currentPartitions.get(partition.getKey()).getVertices());
             List<Vertex> toBeMigrated = new ArrayList<>(newPartitioningVertices);
 
             removeSimiliarElements(toBeRemoved, toBeMigrated);
             removeSimiliarElements(toBeMigrated, currentPartitioningVertices);
 
-            //region Remove Old Tasks
-            //Remove toBeRemoved Tasks from current partitions & Free Resources
+            //region Remove toBeRemoved Tasks from current partitions & Free Resources
             for (Vertex vertex :
                     toBeRemoved) {
-                ExecutorDetails exec = vertex.getExecutor();
-                LOG.info("Attempting to remove: {} of component {} [ REQ {} ] from Node: {} due to migration",
-                        exec, td.getExecutorToComponent().get(exec),
-                        td.getTaskResourceReqList(exec),
-                        partition.getKey());
-                if (_cluster.getAssignments() != null) {
-                    partition.getValue().getNode().freeResourcesForTask(exec, td);
-                    WorkerSlot targetSlot = _cluster.getAssignments().get(td.getId()).getExecutorToSlot().get(exec);
-                    if (schedulerAssignmentMap.containsKey(targetSlot)) {
-                        schedulerAssignmentMap.get(targetSlot).remove(exec);
-                    }
-                    if(scheduledTasks.contains(exec))
-                        scheduledTasks.remove(exec);
-                }
-                //add toBeMigrated execs to current partition's node
-                //  scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, newPartitioning.getValue());
+                removeExecutor(vertex, td, partition.getValue(), oldSchedulerAssignmentMap, executorToWorkerSlotMap,
+                        scheduledTasks, currentPartitions);
             }
             //endregion
 
-            //region Migrate New Tasks
-            //Add toBeMigrated Tasks To newPartition & Consume Resources for it
+            //region Migrate toBeMigrated Tasks from newPartition to currentPartition & Consume Resources for them
             for (Vertex vertex :
                     toBeMigrated) {
-                ExecutorDetails exec = vertex.getExecutor();
-                LOG.info("Attempting to migrate: {} of component {} [ REQ {} ] from Node: {} to Node: {}",
-                        exec, td.getExecutorToComponent().get(exec),
-                        td.getTaskResourceReqList(exec),
-                        partition.getKey(),
-                        newPartition.getNode().getId());
-
-
-                if (_cluster.getAssignments() != null) {
-                    newPartition.getNode().consumeResourcesforTask(exec, td);
-                    WorkerSlot targetSlot = _cluster.getAssignments().get(td.getId()).getExecutorToSlot().get(exec);
-                    if (schedulerAssignmentMap.containsKey(targetSlot)) {
-                        schedulerAssignmentMap.get(targetSlot).remove(exec);
-                    }else{
-                        schedulerAssignmentMap.put(targetSlot, new LinkedList<ExecutorDetails>());
-                    }
-                    if(scheduledTasks.contains(exec))
-                        scheduledTasks.remove(exec);
-                }
+                migrateExecutor(vertex, td, newPartition, partition.getValue(), oldSchedulerAssignmentMap,
+                        executorToWorkerSlotMap, scheduledTasks, currentPartitions);
                 //add toBeMigrated execs to current partition's node
                 //  scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, newPartitioning.getValue());
             }
             //endregion
         }
         //endregion
+
+        Map<WorkerSlot, Collection<ExecutorDetails>> schedulerAssignmentMap = new HashMap<>(oldSchedulerAssignmentMap);
 
         executorsNotScheduled.removeAll(scheduledTasks);
         LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
@@ -159,6 +131,64 @@ public class myStrategy implements IStrategy {
             LOG.error("Topology {} not successfully scheduled!", td.getId());
         }
         return result;
+    }
+
+    public void removeExecutor(Vertex vertex,
+                               TopologyDetails td,
+                               Partition partition,
+                               Map<WorkerSlot, Collection<ExecutorDetails>> schedulerAssignmentMap,
+                               Map<ExecutorDetails, WorkerSlot> executorToWorkerSlotMap,
+                               Collection<ExecutorDetails> scheduledTasks,
+                               Map<Integer, Partition> currentPartitions) {
+        ExecutorDetails exec = vertex.getExecutor();
+        LOG.info("Attempting to remove: {} of component {} [ REQ {} ] from Node: {} due to migration",
+                exec, td.getExecutorToComponent().get(exec),
+                td.getTaskResourceReqList(exec),
+                partition.getNode().getId());
+        if (_cluster.getAssignments() != null) {
+            partition.getNode().freeResourcesForTask(exec, td);
+            WorkerSlot targetSlot = executorToWorkerSlotMap.get(exec);
+            if (targetSlot != null && schedulerAssignmentMap.containsKey(targetSlot)) {
+                if (targetSlot.getNodeId() == partition.getNode().getId()) {
+                    //otherwise: exec already has been migrated
+                    schedulerAssignmentMap.get(targetSlot).remove(exec);
+                    currentPartitions.remove(vertex.getId());
+                }
+            } else { // it's unassigned executor & should be assigned
+            }
+            if (scheduledTasks.contains(exec))
+                scheduledTasks.remove(exec);
+        }
+    }
+
+    /**
+     * Migrate executor exec from fromPartition to toPartition based on new Partitioning
+     *
+     * @param vertex                 the vertex to schedule(containing exec)
+     * @param td                     the topology executor exec is a part of
+     * @param fromPartition          the partition this exec is already placed on
+     * @param toPartition            the new partition that the exec should be migrated to based on new partitioning
+     * @param schedulerAssignmentMap the assignments already calculated
+     * @param scheduledTasks         executors that have been scheduled
+     * @param currentPartitions      the partitions of current Assignment(to effect on toBeRemoved & toBeMigrated Lists)
+     */
+    public void migrateExecutor(Vertex vertex,
+                                TopologyDetails td,
+                                Partition fromPartition,
+                                Partition toPartition,
+                                Map<WorkerSlot, Collection<ExecutorDetails>> schedulerAssignmentMap,
+                                Map<ExecutorDetails, WorkerSlot> executorToWorkerSlotMap,
+                                Collection<ExecutorDetails> scheduledTasks,
+                                Map<Integer, Partition> currentPartitions) {
+        ExecutorDetails exec = vertex.getExecutor();
+        LOG.info("Attempting to migrate: {} of component {} [ REQ {} ] from Node: {} to Node: {}",
+                exec, td.getExecutorToComponent().get(exec),
+                td.getTaskResourceReqList(exec),
+                fromPartition.getNode().getId(),
+                toPartition.getNode().getId());
+        removeExecutor(vertex, td, fromPartition, schedulerAssignmentMap, executorToWorkerSlotMap,
+                scheduledTasks, currentPartitions);
+        scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, toPartition);
     }
 
     @Override
@@ -236,41 +266,6 @@ public class myStrategy implements IStrategy {
         }
         Map<String, SupervisorDetails> supervisors = _cluster.getSupervisors();
         return result;
-    }
-
-    /**
-     * Migrate executor exec from fromPartition to toPartition based on new Partitioning
-     *
-     * @param exec                   the executor to schedule
-     * @param td                     the topology executor exec is a part of
-     * @param schedulerAssignmentMap the assignments already calculated
-     * @param scheduledTasks         executors that have been scheduled
-     * @param fromPartition          the partition this exec is already placed on
-     * @param toPartition            the new partition that the exec should be migrated to based on new partitioning
-     */
-    private void migrateExecutor(ExecutorDetails exec, TopologyDetails td, Map<WorkerSlot,
-            Collection<ExecutorDetails>> schedulerAssignmentMap,
-                                 Collection<ExecutorDetails> scheduledTasks,
-                                 Partition fromPartition,
-                                 Partition toPartition) {
-        WorkerSlot targetSlot = this.findWorkerForExecWithPartitioning(exec, td, schedulerAssignmentMap, fromPartition);
-        if (targetSlot != null) {
-            RAS_Node targetNode = this.idToNode(targetSlot.getNodeId());
-            if (!schedulerAssignmentMap.containsKey(targetSlot)) {
-                schedulerAssignmentMap.put(targetSlot, new LinkedList<ExecutorDetails>());
-            }
-
-            schedulerAssignmentMap.get(targetSlot).add(exec);
-            targetNode.consumeResourcesforTask(exec, td);
-            scheduledTasks.add(exec);
-            LOG.info("TASK {}:{} assigned to Node: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on slot: {} on Rack: {}", exec, td.getExecutorToComponent().get(exec),
-
-                    targetNode.getHostname(), targetNode.getAvailableMemoryResources(),
-                    targetNode.getAvailableCpuResources(), targetNode.getTotalMemoryResources(),
-                    targetNode.getTotalCpuResources(), targetSlot, nodeToRack(targetNode));
-        } else {
-            LOG.error("Not Enough Resources to schedule Task {}", exec);
-        }
     }
 
     /**
@@ -373,6 +368,7 @@ public class myStrategy implements IStrategy {
         //TODO: the slots that already contain execs from this partition should be the priority
         if (node.getAvailableCpuResources() >= taskCPU && node.getAvailableMemoryResources() >= taskMem && node.getFreeSlots().size() > 0) {
             for (WorkerSlot ws : node.getFreeSlots()) {
+                //TODO: Always use free slots, for rescheduling should get already used slots
                 //ToDo: only considers memory - Add Cpu Availibility Constraints
                 if (checkWorkerConstraints(exec, ws, td, scheduleAssignmentMap)) {
                     return ws;
