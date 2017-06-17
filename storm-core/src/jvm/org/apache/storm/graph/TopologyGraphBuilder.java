@@ -48,7 +48,7 @@ public final class TopologyGraphBuilder {
         calculateParallelismMap(td);
 
         Map<String, List<ExecutorDetails>> compToExecsMap = reverseExecstoCompMap(td);
-        Graph g = new Graph();
+        Graph g = new Graph(td.getId());
         //Add Vertices for Spouts
         ExecutorEntity currentExecutor;
         ExecutorDetails exec;

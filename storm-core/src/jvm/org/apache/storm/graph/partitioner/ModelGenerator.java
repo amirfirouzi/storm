@@ -2,6 +2,7 @@ package org.apache.storm.graph.partitioner;
 
 import org.apache.storm.graph.Graph;
 import org.apache.storm.graph.Vertex;
+import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.RAS_Node;
 import org.apache.storm.scheduler.resource.RAS_Nodes;
 import org.apache.storm.scheduler.resource.SchedulingState;
@@ -31,17 +32,16 @@ public class ModelGenerator {
         R2 = new int[g.numVertices()];
         Adjacency = new int[g.numVertices()][g.numVertices()];
 
+
+        int cpuUsage;
+        int memUsage;
         int i = 0;
-        for (RAS_Node node :
-                nodes.getNodes()) {
-            M1[i] = node.getAvailableCpuResources().intValue();
-            M2[i++] = node.getAvailableMemoryResources().intValue();
-        }
-        i = 0;
         for (Vertex vertex :
                 g.getVertices()) {
-            R1[vertex.getId() - 1] = vertex.getWeights().getCpu();
-            R2[vertex.getId() - 1] = vertex.getWeights().getMemory();
+            cpuUsage = vertex.getWeights().getCpu();
+            memUsage = vertex.getWeights().getMemory();
+            R1[vertex.getId() - 1] = cpuUsage;
+            R2[vertex.getId() - 1] = memUsage;
             for (Vertex neighbour :
                     g.getNeighbours(vertex)) {
                 if (vertex.getId() < neighbour.getId()) {
@@ -51,6 +51,23 @@ public class ModelGenerator {
                     Adjacency[(vertex.getId() - 1)][(neighbour.getId() - 1)] = weight;
                 }
             }
+        }
+        i = 0;
+        for (RAS_Node node :
+                nodes.getNodes()) {
+            int CPUUsedByTopology = 0;
+            int MEMUsedByTopology = 0;
+            if (node.getUsedSlots().size() > 0) {
+                for (WorkerSlot ws :
+                        node.getUsedSlots(g.getTopId())) {
+                    CPUUsedByTopology += ws.getAllocatedCpu();
+                    MEMUsedByTopology += ws.getAllocatedMemOnHeap();
+                }
+            }
+            //get Available resources in the cluster + get used resources by topology(because after repartitioning it can be uses again)
+            M1[i] = node.getAvailableCpuResources().intValue() + CPUUsedByTopology;
+            M2[i++] = node.getAvailableMemoryResources().intValue() + MEMUsedByTopology;
+
         }
 
         return new Model(R1, R2, M1, M2, Adjacency);

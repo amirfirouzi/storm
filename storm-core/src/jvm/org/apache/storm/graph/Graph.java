@@ -29,13 +29,13 @@ public class Graph {
     private LinkedHashMap<String, ExecutorDetails> executors;
     private LinkedHashMap<Integer, String> verticesIds;
     private LinkedHashMap<String, String> execsTovertices;
-
+    String topId;
 
     private LinkedHashMap<String, Edge> edges;
     private int numOfVertices;
     private int numOfEdges;
 
-    public Graph() {
+    public Graph(String topologyId) {
         adjList = new LinkedHashMap<Vertex, TreeSet<Vertex>>();
         vertices = new LinkedHashMap<String, Vertex>();
         executors = new LinkedHashMap<>();
@@ -43,7 +43,16 @@ public class Graph {
         execsTovertices = new LinkedHashMap<String, String>();
         edges = new LinkedHashMap<String, Edge>();
         numOfVertices = numOfEdges = 0;
+        this.topId = topologyId;
 
+    }
+
+    public String getTopId() {
+        return topId;
+    }
+
+    public void setTopId(String topId) {
+        this.topId = topId;
     }
 
     public LinkedHashMap<Vertex, TreeSet<Vertex>> getAdjList() {
