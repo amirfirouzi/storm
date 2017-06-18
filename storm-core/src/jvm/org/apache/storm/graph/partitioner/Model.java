@@ -8,37 +8,37 @@ public class Model {
     private int nTasks;
     private int nMachines;
 
-    private int[] R1;
-    private int[] R2;
+    private int[] ResCPU;
+    private int[] ResMEM;
 
-    private int[] M1;
-    private int[] M2;
+    private int[] CapCPU;
+    private int[] CapMEM;
 
     private int[][] Adjacency;
 
 
-    public Model(int[] reqResources1, int[] reqResources2, int[] availResources1, int[] availResources2, int[][] adjacency) throws Exception {
-        if (reqResources1.length != reqResources2.length)
-            throw new Exception("R1 & R2 sizes must be equal");
+    public Model(int[] reqResourcesCPU, int[] reqResourcesMEM, int[] availResourcesCPU, int[] availResourcesMEM, int[][] adjacency) throws Exception {
+        if (reqResourcesCPU.length != reqResourcesMEM.length)
+            throw new Exception("ResCPU & ResMEM sizes must be equal");
         else
-            nTasks = reqResources1.length;
+            nTasks = reqResourcesCPU.length;
 
-        if (availResources1.length != availResources2.length)
-            throw new Exception("M1 & M2 sizes must be equal");
+        if (availResourcesCPU.length != availResourcesMEM.length)
+            throw new Exception("CapCPU & CapMEM sizes must be equal");
         else
-            nMachines = availResources1.length;
+            nMachines = availResourcesCPU.length;
 
         //Resource Demand
         //===============
         //Requested Resources(type 1:CPU, type 2: RAM) by tasks
-        R1 = reqResources1;
-        R2 = reqResources2;
+        ResCPU = reqResourcesCPU;
+        ResMEM = reqResourcesMEM;
 
         //Resource Pool
         //===============
         //Available Resources(type 1) by Machines
-        M1 = availResources1;
-        M2 = availResources2;
+        CapCPU = availResourcesCPU;
+        CapMEM = availResourcesMEM;
 
         //Adjacency Matrix containing communication links with weights
         Adjacency = adjacency;
@@ -52,36 +52,36 @@ public class Model {
         return nMachines;
     }
 
-    public int[] getR1() {
-        return R1;
+    public int[] getResCPU() {
+        return ResCPU;
     }
 
-    public void setR1(int[] r1) {
-        R1 = r1;
+    public void setResCPU(int[] resCPU) {
+        ResCPU = resCPU;
     }
 
-    public int[] getR2() {
-        return R2;
+    public int[] getResMEM() {
+        return ResMEM;
     }
 
-    public void setR2(int[] r2) {
-        R2 = r2;
+    public void setResMEM(int[] resMEM) {
+        ResMEM = resMEM;
     }
 
-    public int[] getM1() {
-        return M1;
+    public int[] getCapCPU() {
+        return CapCPU;
     }
 
-    public void setM1(int[] m1) {
-        M1 = m1;
+    public void setCapCPU(int[] capCPU) {
+        CapCPU = capCPU;
     }
 
-    public int[] getM2() {
-        return M2;
+    public int[] getCapMEM() {
+        return CapMEM;
     }
 
-    public void setM2(int[] m2) {
-        M2 = m2;
+    public void setCapMEM(int[] capMEM) {
+        CapMEM = capMEM;
     }
 
     public int[][] getAdjacency() {

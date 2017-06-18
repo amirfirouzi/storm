@@ -31,8 +31,8 @@ public class CostFunction {
         //List<Integer> internal = new ArrayList();
         List<Integer> loadCPU = new ArrayList();
         List<Integer> loadMEM = new ArrayList();
-        int[] capacityCPU = model.getM1();
-        int[] capacityMEM = model.getM2();
+        int[] capacityCPU = model.getCapCPU();
+        int[] capacityMEM = model.getCapMEM();
         int disconnectedPartitions = 0;
         for (int i = 0; i < model.getnMachines(); i++) {
             List<Integer> partitionTasks = find(selection, i);
@@ -42,8 +42,8 @@ public class CostFunction {
                 boolean connected = isConnected(model.getAdjacency(), partitionTasks);
                 disconnectedPartitions += (!connected ? 1 : 0);
                 //internal.add(InternalCommunication(partitionTasks, model.getAdjacency()));
-                loadCPU.add(InternalLoad(partitionTasks, model.getR1()));
-                loadMEM.add(InternalLoad(partitionTasks, model.getR2()));
+                loadCPU.add(InternalLoad(partitionTasks, model.getResCPU()));
+                loadMEM.add(InternalLoad(partitionTasks, model.getResMEM()));
                 if (mode != costMode.LoadBalanced)
                     crosscut += ExternalCommunication(partitionTasks, model.getAdjacency());
 

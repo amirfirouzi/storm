@@ -58,7 +58,7 @@ public class Vertex implements Comparable<Vertex> {
         this.executor = executor;
     }
 
-    public Vertex(String v,ExecutorDetails executor, Resource weights) {
+    public Vertex(String v, ExecutorDetails executor, Resource weights) {
         name = v;
         distance = INFINITY; // start as infinity away
         predecessor = null;
@@ -119,7 +119,7 @@ public class Vertex implements Comparable<Vertex> {
     }
 
     public String toString() {
-        return name;
+        return name + "(" + executor + ")";
     }
 
     /**

@@ -6,7 +6,6 @@ import org.apache.storm.scheduler.resource.RAS_Node;
 import org.apache.storm.scheduler.resource.RAS_Nodes;
 import org.apache.storm.scheduler.resource.SchedulingState;
 
-
 import java.util.*;
 
 /**
@@ -91,7 +90,7 @@ public class Partitioner {
 
                 // Update the records if it improves the solution
                 if (bestCost == null)
-                    bestCost = new CostResult(costResult.getLoadR1(), costResult.getLoadR2(), costResult.getCrosscut(), antSelections[ant], cost);
+                    bestCost = new CostResult(costResult.getLoadCPU(), costResult.getLoadMEM(), costResult.getCrosscut(), antSelections[ant], cost);
 
                 if (bestAnt == -1)
                     bestAnt = ant;
@@ -123,7 +122,8 @@ public class Partitioner {
 
             // Show Iteration Information
             if (verbose)
-                System.out.println("Iteration: " + it + " Selection= " + arrayToString(bestResults.get(it).getSelection())
+                System.out.println("It(" + it + ") Sel= " + arrayToString(bestResults.get(it).getSelection())
+                        + " Crosscut= " + bestResults.get(it).getCrosscut()
                         + " Cost= " + bestResults.get(it).getCost());
 
         }//end Iteration
@@ -135,18 +135,14 @@ public class Partitioner {
         long totalTime = endTime - startTime;
         float usedMemory = ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (float) (1024 * 1024));
         CostResult bestOfTheBest = bestResults.get(index);
-
-        if (verbose) {
-            System.out.println("\n-------------\n");
-            System.out.println("Best Answer:\n Iteration: " + index + " Selection= " + arrayToString(bestOfTheBest.getSelection()) + " Cost= " + bestOfTheBest.getCost());
-            System.out.println("time: " + (totalTime));
-            System.out.println("used Mem: " + usedMemory);
-
-        }
         //endregion
 
         //region Create PartitioningResult Object
-        PartitioningResult answer = new PartitioningResult(totalTime, usedMemory, index, bestOfTheBest.getLoadR1(), bestOfTheBest.getLoadR2(), bestOfTheBest.getCrosscut(), bestOfTheBest.getSelection(), bestOfTheBest.getCost());
+        PartitioningResult answer = new PartitioningResult(
+                totalTime, usedMemory, index, bestOfTheBest.getLoadCPU(),
+                bestOfTheBest.getLoadMEM(), bestOfTheBest.getCrosscut(),
+                bestOfTheBest.getSelection(), bestOfTheBest.getCost());
+
         for (i = 0; i < answer.getBestSelection().length; i++) {
             int nodeId = answer.getBestSelection()[i];
             int taskId = i + 1;
@@ -155,11 +151,35 @@ public class Partitioner {
             } else {
                 List<Vertex> partitionVertices = new ArrayList<>();
                 partitionVertices.add(graph.getVertex(taskId));
-                Partition p = new Partition(nodeWithIds.get(nodeId), partitionVertices, answer.getBestLoadR1().get(nodeId), answer.getBestLoadR2().get(nodeId));
+                Partition p = new Partition(
+                        nodeWithIds.get(nodeId), partitionVertices, answer.getBestLoadCPU().get(nodeId),
+                        answer.getBestLoadMEM().get(nodeId), model.getCapCPU()[nodeId], model.getCapMEM()[nodeId]);
+
                 answer.addPartition(nodeId, p);
             }
         }
         //endregion
+        if (verbose) {
+            System.out.println("\n-------------\nBest Answer:");
+            System.out.println(
+                    "\tIt(" + index + ")"
+                            + " Sel= " + arrayToString(bestOfTheBest.getSelection())
+                            + " Crosscut= " + answer.getBestCut()
+                            + " Cost= " + bestOfTheBest.getCost());
+            System.out.println("Partitions:");
+            for (Map.Entry<Integer, Partition> partition :
+                    answer.getPartitions().entrySet()) {
+                System.out.println("\tP(" + partition.getKey() + ") "
+                        + " loadCPU= " + partition.getValue().getLoadCPU()
+                        + " of (" + partition.getValue().getCapacityCPU() + ") -"
+                        + " loadMEM= " + partition.getValue().getLoadMEM()
+                        + " of (" + partition.getValue().getCapacityMEM() + ")"
+                        + " \n\t\tTasks: {" + listToString(partition.getValue().getVertices()) + "}\n");
+
+            }
+            System.out.println("time: " + (totalTime));
+            System.out.println("used Mem: " + usedMemory);
+        }
 
         return answer;
     }
@@ -192,6 +212,16 @@ public class Partitioner {
             }
         }
         return result;
+    }
+
+    public static String listToString(List<?> list) {
+        String str = "";
+        for (Object item : list) {
+            str += item + ", ";
+        }
+        if (str != "")
+            str = str.substring(0, str.length() - 2);
+        return str;
     }
 
     public static String arrayToString(int[] array) {
@@ -244,6 +274,14 @@ public class Partitioner {
         double sum = 0;
         for (int i = 0; i < array.length; i++) {
             sum += array[i];
+        }
+        return sum;
+    }
+
+    public static int sumOfElements(List<Integer> array) {
+        int sum = 0;
+        for (int i = 0; i < array.size(); i++) {
+            sum += array.get(i);
         }
         return sum;
     }

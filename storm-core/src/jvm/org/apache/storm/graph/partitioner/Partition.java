@@ -12,14 +12,18 @@ public class Partition {
 
     private RAS_Node node;
     private List<Vertex> vertices;
-    private int loadR1;
-    private int loadR2;
+    private int loadCPU;
+    private int loadMEM;
+    private int capacityCPU;
+    private int capacityMEM;
 
-    public Partition(RAS_Node node, List<Vertex> vertices, int loadR1, int loadR2) {
+    public Partition(RAS_Node node, List<Vertex> vertices, int loadCPU, int loadMEM, int capacityCPU, int capacityMEM) {
         this.node = node;
         this.vertices = vertices;
-        this.loadR1 = loadR1;
-        this.loadR2 = loadR2;
+        this.loadCPU = loadCPU;
+        this.loadMEM = loadMEM;
+        this.capacityCPU = capacityCPU;
+        this.capacityMEM = capacityMEM;
     }
 
     public RAS_Node getNode() {
@@ -38,19 +42,35 @@ public class Partition {
         this.vertices = vertices;
     }
 
-    public int getLoadR1() {
-        return loadR1;
+    public int getLoadCPU() {
+        return loadCPU;
     }
 
-    public void setLoadR1(int loadR1) {
-        this.loadR1 = loadR1;
+    public void setLoadCPU(int loadCPU) {
+        this.loadCPU = loadCPU;
     }
 
-    public int getLoadR2() {
-        return loadR2;
+    public int getLoadMEM() {
+        return loadMEM;
     }
 
-    public void setLoadR2(int loadR2) {
-        this.loadR2 = loadR2;
+    public void setLoadMEM(int loadMEM) {
+        this.loadMEM = loadMEM;
+    }
+
+    public int getCapacityCPU() {
+        return capacityCPU;
+    }
+
+    public void setCapacityCPU(int capacityCPU) {
+        this.capacityCPU = capacityCPU;
+    }
+
+    public int getCapacityMEM() {
+        return capacityMEM;
+    }
+
+    public void setCapacityMEM(int capacityMEM) {
+        this.capacityMEM = capacityMEM;
     }
 }

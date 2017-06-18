@@ -11,17 +11,19 @@ public class PartitioningResult {
     private long elapsedTime;
     private float usedMemory;
     private int iteration, bestCut;
-    private List<Integer> bestLoadR1, bestLoadR2;
+    private List<Integer> bestLoadCPU, bestLoadMEM;
     private int[] bestSelection;
     private double bestCost;
     private Map<Integer, Partition> partitions;
 
-    public PartitioningResult(long elapsedTime, float usedMemory, int iteration, List<Integer> bestLoadR1, List<Integer> bestLoadR2, int bestCut, int[] bestSelection, double bestCost) {
+    public PartitioningResult(long elapsedTime, float usedMemory, int iteration,
+                              List<Integer> bestLoadCPU, List<Integer> bestLoadMEM,
+                              int bestCut, int[] bestSelection, double bestCost) {
         this.elapsedTime = elapsedTime;
         this.usedMemory = usedMemory;
         this.iteration = iteration;
-        this.bestLoadR1 = bestLoadR1;
-        this.bestLoadR2 = bestLoadR2;
+        this.bestLoadCPU = bestLoadCPU;
+        this.bestLoadMEM = bestLoadMEM;
         this.bestCut = bestCut;
         this.bestSelection = bestSelection;
         this.bestCost = bestCost;
@@ -52,20 +54,20 @@ public class PartitioningResult {
         this.iteration = iteration;
     }
 
-    public List<Integer> getBestLoadR1() {
-        return bestLoadR1;
+    public List<Integer> getBestLoadCPU() {
+        return bestLoadCPU;
     }
 
-    public void setBestLoadR1(List<Integer> bestLoad) {
-        this.bestLoadR1 = bestLoad;
+    public void setBestLoadCPU(List<Integer> bestLoad) {
+        this.bestLoadCPU = bestLoad;
     }
 
-    public List<Integer> getBestLoadR2() {
-        return bestLoadR2;
+    public List<Integer> getBestLoadMEM() {
+        return bestLoadMEM;
     }
 
-    public void setBestLoadR2(List<Integer> bestLoadR2) {
-        this.bestLoadR2 = bestLoadR2;
+    public void setBestLoadMEM(List<Integer> bestLoadMEM) {
+        this.bestLoadMEM = bestLoadMEM;
     }
 
     public int getBestCut() {

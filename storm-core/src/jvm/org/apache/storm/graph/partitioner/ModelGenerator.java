@@ -60,11 +60,12 @@ public class ModelGenerator {
             if (node.getUsedSlots().size() > 0) {
                 for (WorkerSlot ws :
                         node.getUsedSlots(g.getTopId())) {
-                    CPUUsedByTopology += ws.getAllocatedCpu();
-                    MEMUsedByTopology += ws.getAllocatedMemOnHeap();
+                    CPUUsedByTopology = (int) node.getCpuUsedByWorker(ws);
+                    MEMUsedByTopology = (int) node.getMemoryUsedByWorker(ws);
                 }
             }
-            //get Available resources in the cluster + get used resources by topology(because after repartitioning it can be uses again)
+            //Available resources in the cluster + used resources by topology(because after repartitioning it can be uses again)
+            //but resources used by other topologies cant be used by partitioner
             M1[i] = node.getAvailableCpuResources().intValue() + CPUUsedByTopology;
             M2[i++] = node.getAvailableMemoryResources().intValue() + MEMUsedByTopology;
 

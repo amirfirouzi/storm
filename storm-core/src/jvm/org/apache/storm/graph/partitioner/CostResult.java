@@ -6,15 +6,15 @@ import java.util.List;
  * Created by amir on 5/7/17.
  */
 public class CostResult {
-    private List<Integer> loadR1;
-    private List<Integer> loadR2;
+    private List<Integer> loadCPU;
+    private List<Integer> loadMEM;
     private int crosscut = 0;
     private int[] selection;
     private double cost;
 
-    public CostResult(List<Integer> loadR1, List<Integer> loadR2, int crosscut, int[] selection, double cost) {
-        this.loadR1 = loadR1;
-        this.loadR2 = loadR2;
+    public CostResult(List<Integer> loadCPU, List<Integer> loadMEM, int crosscut, int[] selection, double cost) {
+        this.loadCPU = loadCPU;
+        this.loadMEM = loadMEM;
         this.crosscut = crosscut;
         this.selection = selection;
         this.cost = cost;
@@ -24,12 +24,12 @@ public class CostResult {
         return selection;
     }
 
-    public List<Integer> getLoadR1() {
-        return loadR1;
+    public List<Integer> getLoadCPU() {
+        return loadCPU;
     }
 
-    public List<Integer> getLoadR2() {
-        return loadR2;
+    public List<Integer> getLoadMEM() {
+        return loadMEM;
     }
 
     public int getCrosscut() {
