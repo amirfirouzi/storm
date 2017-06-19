@@ -46,7 +46,7 @@ public class RAS_Node {
 
     //A map consisting of all workers on the node.
     //The key of the map is the worker id and the value is the corresponding workerslot object
-    Map<String, WorkerSlot> _slots = new HashMap<String, WorkerSlot> ();
+    Map<String, WorkerSlot> _slots = new HashMap<String, WorkerSlot>();
 
     // A map describing which topologies are using which slots on this node.  The format of the map is the following:
     // {TopologyId -> {WorkerId -> {Executors}}}
@@ -213,6 +213,7 @@ public class RAS_Node {
 
     /**
      * Frees a single slot in this node
+     *
      * @param ws the slot to free
      */
     public void free(WorkerSlot ws) {
@@ -240,7 +241,7 @@ public class RAS_Node {
 
     private void freeMemory(double amount) {
         LOG.debug("freeing {} memory on node {}...avail mem: {}", amount, getHostname(), _availMemory);
-        if((_availMemory + amount) > getTotalMemoryResources()) {
+        if ((_availMemory + amount) > getTotalMemoryResources()) {
             LOG.warn("Freeing more memory than there exists! Memory trying to free: {} Total memory on Node: {}", (_availMemory + amount), getTotalMemoryResources());
             return;
         }
@@ -290,6 +291,7 @@ public class RAS_Node {
 
     /**
      * Find a which topology is running on a worker slot
+     *
      * @return the topology using the worker slot.  If worker slot is free then return null
      */
     public TopologyDetails findTopologyUsingWorker(WorkerSlot ws) {
@@ -297,7 +299,7 @@ public class RAS_Node {
             String topoId = entry.getKey();
             Set<String> workerIds = entry.getValue().keySet();
             for (String workerId : workerIds) {
-                if(ws.getId().equals(workerId)) {
+                if (ws.getId().equals(workerId)) {
                     return _topologies.getById(topoId);
                 }
             }
@@ -307,8 +309,9 @@ public class RAS_Node {
 
     /**
      * Assigns a worker to a node
-     * @param target the worker slot to assign the executors
-     * @param td the topology the executors are from
+     *
+     * @param target    the worker slot to assign the executors
+     * @param td        the topology the executors are from
      * @param executors executors to assign to the specified worker slot
      */
     public void assign(WorkerSlot target, TopologyDetails td, Collection<ExecutorDetails> executors) {
@@ -423,6 +426,7 @@ public class RAS_Node {
 
     /**
      * Sets the Available Memory for a node
+     *
      * @param amount the amount to set as available memory
      */
     public void setAvailableMemory(Double amount) {
@@ -431,6 +435,7 @@ public class RAS_Node {
 
     /**
      * Gets the available memory resources for this node
+     *
      * @return the available memory for this node
      */
     public Double getAvailableMemoryResources() {
@@ -442,6 +447,7 @@ public class RAS_Node {
 
     /**
      * Gets the total memory resources for this node
+     *
      * @return the total memory for this node
      */
     public Double getTotalMemoryResources() {
@@ -454,12 +460,13 @@ public class RAS_Node {
 
     /**
      * Consumes a certain amount of memory for this node
+     *
      * @param amount is the amount memory to consume from this node
      * @return the current available memory for this node after consumption
      */
-    public Double consumeMemory(Double amount) {
+    public Double consumeMemory(Double amount, ExecutorDetails exec) {
         if (amount > _availMemory) {
-            LOG.error("Attempting to consume more memory than available! Needed: {}, we only have: {}", amount, _availMemory);
+            LOG.error("Attempting to consume more memory than available! Needed: {}, we only have: {} for task{}", amount, _availMemory,exec);
             throw new IllegalStateException("Attempting to consume more memory than available");
         }
         _availMemory = _availMemory - amount;
@@ -468,6 +475,7 @@ public class RAS_Node {
 
     /**
      * Gets the available cpu resources for this node
+     *
      * @return the available cpu for this node
      */
     public Double getAvailableCpuResources() {
@@ -479,6 +487,7 @@ public class RAS_Node {
 
     /**
      * Gets the total cpu resources for this node
+     *
      * @return the total cpu for this node
      */
     public Double getTotalCpuResources() {
@@ -491,6 +500,7 @@ public class RAS_Node {
 
     /**
      * Consumes a certain amount of cpu for this node
+     *
      * @param amount is the amount cpu to consume from this node
      * @return the current available cpu for this node after consumption
      */
@@ -505,6 +515,7 @@ public class RAS_Node {
 
     /**
      * Consumes a certain amount of resources for a executor in a topology.
+     *
      * @param exec is the executor that is consuming resources on this node
      * @param topo the topology the executor is a part
      */
@@ -512,11 +523,12 @@ public class RAS_Node {
         Double taskMemReq = topo.getTotalMemReqTask(exec);
         Double taskCpuReq = topo.getTotalCpuReqTask(exec);
         consumeCPU(taskCpuReq);
-        consumeMemory(taskMemReq);
+        consumeMemory(taskMemReq,exec);
     }
 
     /**
      * frees the amount of resources for a executor in a topology.
+     *
      * @param exec is the executor for which the resources are freed for
      * @param topo the topology the executor is a part
      */

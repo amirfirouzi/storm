@@ -146,7 +146,7 @@ public class Partitioner {
             int nodeId = answer.getBestSelection()[i];
             int taskId = i + 1;
             if (answer.getPartitions().get(nodeId) != null) {
-                answer.getPartitions().get(nodeId).getVertices().add(graph.getVertex(taskId));
+                answer.addVertexToPartition(nodeId,graph.getVertex(taskId));
             } else {
                 List<Vertex> partitionVertices = new ArrayList<>();
                 partitionVertices.add(graph.getVertex(taskId));

@@ -70,7 +70,7 @@ public class myStrategy implements IStrategy {
 
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
 
-        Map<Integer, Partition> currentPartitions = currentPartitioning.getPartitions();
+//        Map<Integer, Partition> currentPartitions = currentPartitioning.getPartitions();
         Map<ExecutorDetails, WorkerSlot> executorToWorkerSlotMap = _cluster.getAssignments().get(td.getId()).getExecutorToSlot();
         //region Migration & Cleanup
         //TODO: should be seperated into several functions
@@ -80,7 +80,7 @@ public class myStrategy implements IStrategy {
             Partition newPartition = newPartitioning.getPartition(partition.getKey());
             List<Vertex> currentPartitioningVertices = new ArrayList<>(partition.getValue().getVertices());
             List<Vertex> newPartitioningVertices = new ArrayList<>(newPartition.getVertices());
-            List<Vertex> toBeRemoved = new ArrayList<>(currentPartitions.get(partition.getKey()).getVertices());
+            List<Vertex> toBeRemoved = new ArrayList<>(currentPartitioning.getPartition(partition.getKey()).getVertices());
             List<Vertex> toBeMigrated = new ArrayList<>(newPartitioningVertices);
 
             removeSimiliarElements(toBeRemoved, toBeMigrated);
@@ -90,15 +90,16 @@ public class myStrategy implements IStrategy {
             for (Vertex vertex :
                     toBeRemoved) {
                 removeExecutor(vertex, td, partition.getValue(), oldSchedulerAssignmentMap, executorToWorkerSlotMap,
-                        scheduledTasks, currentPartitions);
+                        scheduledTasks, currentPartitioning.getPartitions());
             }
             //endregion
 
             //region Migrate toBeMigrated Tasks from newPartition to currentPartition & Consume Resources for them
             for (Vertex vertex :
                     toBeMigrated) {
-                migrateExecutor(vertex, td, newPartition, partition.getValue(), oldSchedulerAssignmentMap,
-                        executorToWorkerSlotMap, scheduledTasks, currentPartitions);
+                Partition migrateToPartition = currentPartitioning.getPartition(currentPartitioning.getExecuterPartitionId(vertex.getExecutor().toString()));
+                migrateExecutor(vertex, td, migrateToPartition, partition.getValue(), oldSchedulerAssignmentMap,
+                        executorToWorkerSlotMap, scheduledTasks, currentPartitioning.getPartitions());
                 //add toBeMigrated execs to current partition's node
                 //  scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, newPartitioning.getValue());
             }
@@ -147,12 +148,13 @@ public class myStrategy implements IStrategy {
                 partition.getNode().getId());
         if (_cluster.getAssignments() != null) {
             partition.getNode().freeResourcesForTask(exec, td);
+            _nodes.getNodeById(partition.getNode().getId()).freeResourcesForTask(exec, td);
             WorkerSlot targetSlot = executorToWorkerSlotMap.get(exec);
             if (targetSlot != null && schedulerAssignmentMap.containsKey(targetSlot)) {
                 if (targetSlot.getNodeId() == partition.getNode().getId()) {
                     //otherwise: exec already has been migrated
                     schedulerAssignmentMap.get(targetSlot).remove(exec);
-                    currentPartitions.get(partition.getId()).getVertices().remove(vertex);
+                    //currentPartitions.get(partition.getId()).getVertices().remove(vertex);
                 }
             } else { // it's unassigned executor & should be assigned
             }
@@ -182,13 +184,14 @@ public class myStrategy implements IStrategy {
                                 Map<Integer, Partition> currentPartitions) {
         ExecutorDetails exec = vertex.getExecutor();
         //TODO: print source & destination ports too
+
+        removeExecutor(vertex, td, fromPartition, schedulerAssignmentMap, executorToWorkerSlotMap,
+                scheduledTasks, currentPartitions);
         LOG.info("Attempting to migrate: {} of component {} [ REQ {} ] from Node: {} to Node: {}",
                 exec, td.getExecutorToComponent().get(exec),
                 td.getTaskResourceReqList(exec),
                 fromPartition.getNode().getId(),
                 toPartition.getNode().getId());
-        removeExecutor(vertex, td, fromPartition, schedulerAssignmentMap, executorToWorkerSlotMap,
-                scheduledTasks, currentPartitions);
         scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, toPartition);
     }
 

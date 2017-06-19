@@ -1,6 +1,7 @@
 package org.apache.storm.graph.partitioner;
 
 import org.apache.storm.graph.Graph;
+import org.apache.storm.graph.Vertex;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,6 +19,7 @@ public class PartitioningResult {
     private double bestCost;
     private Graph graph;
     private Map<Integer, Partition> partitions;
+    private Map<String, Integer> execToPartitionId;
 
     public PartitioningResult(Graph graph, long elapsedTime, float usedMemory, int iteration,
                               List<Integer> bestLoadCPU, List<Integer> bestLoadMEM,
@@ -31,7 +33,8 @@ public class PartitioningResult {
         this.bestSelection = bestSelection;
         this.bestCost = bestCost;
         this.partitions = new LinkedHashMap<>();
-        this.graph=graph;
+        this.graph = graph;
+        execToPartitionId = new LinkedHashMap<>();
     }
 
     public Graph getGraph() {
@@ -118,7 +121,20 @@ public class PartitioningResult {
         this.partitions = partitions;
     }
 
+    public void addVertexToPartition(int partitionId, Vertex vertex) {
+        partitions.get(partitionId).getVertices().add(vertex);
+        execToPartitionId.put(vertex.getExecutor().toString(), partitionId);
+    }
+
     public void addPartition(Integer nodeId, Partition partition) {
         this.partitions.put(nodeId, partition);
+        for (Vertex vertex :
+                partition.getVertices()) {
+            execToPartitionId.put(vertex.getExecutor().toString(), partition.getId());
+        }
+    }
+
+    public int getExecuterPartitionId(String execName) {
+        return execToPartitionId.get(execName);
     }
 }
