@@ -28,8 +28,9 @@ public class Graph {
     private LinkedHashMap<String, Vertex> vertices;
     private LinkedHashMap<String, ExecutorDetails> executors;
     private LinkedHashMap<Integer, String> verticesIds;
-    private LinkedHashMap<String, String> execsTovertices;
-    String topId;
+    private LinkedHashMap<String, String> execsToVertices;
+    private String topId;
+    private boolean edgesHasWeigth;
 
     private LinkedHashMap<String, Edge> edges;
     private int numOfVertices;
@@ -40,10 +41,11 @@ public class Graph {
         vertices = new LinkedHashMap<String, Vertex>();
         executors = new LinkedHashMap<>();
         verticesIds = new LinkedHashMap<Integer, String>();
-        execsTovertices = new LinkedHashMap<String, String>();
+        execsToVertices = new LinkedHashMap<String, String>();
         edges = new LinkedHashMap<String, Edge>();
         numOfVertices = numOfEdges = 0;
         this.topId = topologyId;
+        this.edgesHasWeigth = false;
 
     }
 
@@ -71,7 +73,7 @@ public class Graph {
             vertices.put(name, v);
             executors.put(exec.getExecutor().toString(), exec.getExecutor());
             verticesIds.put(numOfVertices, name);
-            execsTovertices.put(exec.getExecutorName(), name);
+            execsToVertices.put(exec.getExecutorName(), name);
             adjList.put(v, new TreeSet<Vertex>());
 
         }
@@ -91,7 +93,7 @@ public class Graph {
             executors.put(exec.getExecutor().toString(), exec.getExecutor());
             verticesIds.put(numOfVertices, vertexName);
             String execName = exec.getExecutor().toString();
-            execsTovertices.put(execName, vertexName);
+            execsToVertices.put(execName, vertexName);
             adjList.put(v, new TreeSet<Vertex>());
 
         }
@@ -103,7 +105,7 @@ public class Graph {
     }
 
     public Vertex getVertexFromExecutor(String execName) {
-        return vertices.get(execsTovertices.get(execName));
+        return vertices.get(execsToVertices.get(execName));
     }
 
     public Vertex getVertex(Integer index) {
@@ -262,5 +264,18 @@ public class Graph {
 
     public void addExecutor(ExecutorDetails executor) {
         this.executors.put(executor.toString(), executor);
+    }
+
+    public boolean doesEdgesHaveWeight() {
+        if (!edgesHasWeigth) {
+            for (Edge edge :
+                    edges.values()) {
+                if (edge.getWeight() != -1) {
+                    edgesHasWeigth = true;
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

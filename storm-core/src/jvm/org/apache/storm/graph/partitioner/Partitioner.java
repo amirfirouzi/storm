@@ -64,14 +64,13 @@ public class Partitioner {
         //endregion
 
         //region ACO Main Loop
-
         // iteration loop
         for (int it = 0; it < maxIt; it++) {
             // Move Ants
             bestCost = null;
             bestAnt = -1;
             for (int ant = 0; ant < nAnt; ant++) {
-                //ToDo: empty current ant's Selection
+                //empty current ant's Selection
                 antSelections[ant] = new int[model.getnTasks()];
                 for (int level = 0; level < model.getnTasks(); level++) {
                     // Probabilities
@@ -137,8 +136,8 @@ public class Partitioner {
         CostResult bestOfTheBest = bestResults.get(index);
         //endregion
 
-        //region Create PartitioningResult Object
-        PartitioningResult answer = new PartitioningResult(
+        //region Create and Show PartitioningResult Object
+        PartitioningResult answer = new PartitioningResult(graph,
                 totalTime, usedMemory, index, bestOfTheBest.getLoadCPU(),
                 bestOfTheBest.getLoadMEM(), bestOfTheBest.getCrosscut(),
                 bestOfTheBest.getSelection(), bestOfTheBest.getCost());
@@ -151,14 +150,13 @@ public class Partitioner {
             } else {
                 List<Vertex> partitionVertices = new ArrayList<>();
                 partitionVertices.add(graph.getVertex(taskId));
-                Partition p = new Partition(
+                Partition p = new Partition(nodeId,
                         nodeWithIds.get(nodeId), partitionVertices, answer.getBestLoadCPU().get(nodeId),
                         answer.getBestLoadMEM().get(nodeId), model.getCapCPU()[nodeId], model.getCapMEM()[nodeId]);
 
                 answer.addPartition(nodeId, p);
             }
         }
-        //endregion
         if (verbose) {
             System.out.println("\n-------------\nBest Answer:");
             System.out.println(
@@ -180,6 +178,7 @@ public class Partitioner {
             System.out.println("time: " + (totalTime));
             System.out.println("used Mem: " + usedMemory);
         }
+        //endregion
 
         return answer;
     }

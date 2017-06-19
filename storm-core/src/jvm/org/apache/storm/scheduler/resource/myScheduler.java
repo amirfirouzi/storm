@@ -179,13 +179,14 @@ public class myScheduler implements IScheduler {
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
         boolean isPartitioningImproved = isPartitioningImproved(td.getId(), partitioning);
         scheduleTopology(td, partitioning, isPartitioningImproved);
+        lastPartitioning.put(td.getId(), partitioning);
     }
 
 
     public boolean isPartitioningImproved(String td, PartitioningResult newPartitioning) {
-        //TODO: now only considers crosscut, ADD loads too
-        if (newPartitioning.getBestCut() < lastPartitioning.get(td).getBestCut()) {
-            lastPartitioning.put(td, newPartitioning);
+        //TODO: now only considers crosscut, ADD loads and other factors too
+        if ((newPartitioning.getBestCut() < lastPartitioning.get(td).getBestCut())
+                || (!lastPartitioning.get(td).getGraph().doesEdgesHaveWeight())) {
             return true;
         } else
             return false;

@@ -61,8 +61,6 @@ public class CostFunction {
             }
         }
 
-        //ToDo: Consider effect of disconnected Vertices in partitions
-
         //Calculate load balancing violations
         double balancingViolationCPU = 0;
         double balancingViolationMEM = 0;
@@ -99,7 +97,6 @@ public class CostFunction {
             crosscutEffectRatio *= 0.6;
         }
 
-        //ToDo: effect of InternalCommunication(calculated but not used)
         double z = (loadEffectRatio * capacityViolation) + //Capacity Violation Cost
                 (crosscutEffectRatio * crosscut) + //crosscut Cost
                 (loadEffectRatio * ((balancingViolationCPU) + (balancingViolationMEM)) / 2) + //load balancing cost

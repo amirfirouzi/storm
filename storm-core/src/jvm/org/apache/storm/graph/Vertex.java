@@ -27,42 +27,20 @@ public class Vertex implements Comparable<Vertex> {
     private int id;
     private Resource weights;
     private ExecutorDetails executor;
-    /**
-     * a measure of the structural importance of a vertex.
-     * The value should initially be set to zero. A higher
-     * centrality score should mean a Vertex is more central.
-     */
-    private double centrality;
-    public Vertex predecessor; // previous vertex
-    /**
-     * Infinite distance indicates that there is no path
-     * from the source to this vertex
-     */
-    public static final int INFINITY = Integer.MAX_VALUE;
-    public int distance;
 
     public Vertex(String v) {
         name = v;
-        distance = INFINITY; // start as infinity away
-        predecessor = null;
-        centrality = 0.0;
         weights = null;
     }
 
     public Vertex(String v, ExecutorDetails executor) {
         name = v;
-        distance = INFINITY; // start as infinity away
-        predecessor = null;
-        centrality = 0.0;
         weights = null;
         this.executor = executor;
     }
 
     public Vertex(String v, ExecutorDetails executor, Resource weights) {
         name = v;
-        distance = INFINITY; // start as infinity away
-        predecessor = null;
-        centrality = 0.0;
         this.weights = weights;
     }
 
@@ -127,12 +105,7 @@ public class Vertex implements Comparable<Vertex> {
      * then lexicographically
      */
     public int compareTo(Vertex other) {
-        int diff = distance - other.distance;
-        if (diff != 0) {
-            return diff;
-        } else {
-            return name.compareTo(other.name);
-        }
+        return id;
     }
 }
 

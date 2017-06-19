@@ -152,7 +152,7 @@ public class myStrategy implements IStrategy {
                 if (targetSlot.getNodeId() == partition.getNode().getId()) {
                     //otherwise: exec already has been migrated
                     schedulerAssignmentMap.get(targetSlot).remove(exec);
-                    currentPartitions.remove(vertex.getId());
+                    currentPartitions.get(partition.getId()).getVertices().remove(vertex);
                 }
             } else { // it's unassigned executor & should be assigned
             }
@@ -181,6 +181,7 @@ public class myStrategy implements IStrategy {
                                 Collection<ExecutorDetails> scheduledTasks,
                                 Map<Integer, Partition> currentPartitions) {
         ExecutorDetails exec = vertex.getExecutor();
+        //TODO: print source & destination ports too
         LOG.info("Attempting to migrate: {} of component {} [ REQ {} ] from Node: {} to Node: {}",
                 exec, td.getExecutorToComponent().get(exec),
                 td.getTaskResourceReqList(exec),

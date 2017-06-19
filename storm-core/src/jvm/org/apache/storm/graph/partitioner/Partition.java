@@ -11,19 +11,29 @@ import java.util.List;
 public class Partition {
 
     private RAS_Node node;
+    private int id;
     private List<Vertex> vertices;
     private int loadCPU;
     private int loadMEM;
     private int capacityCPU;
     private int capacityMEM;
 
-    public Partition(RAS_Node node, List<Vertex> vertices, int loadCPU, int loadMEM, int capacityCPU, int capacityMEM) {
+    public Partition(int id, RAS_Node node, List<Vertex> vertices, int loadCPU, int loadMEM, int capacityCPU, int capacityMEM) {
+        this.id = id;
         this.node = node;
         this.vertices = vertices;
         this.loadCPU = loadCPU;
         this.loadMEM = loadMEM;
         this.capacityCPU = capacityCPU;
         this.capacityMEM = capacityMEM;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public RAS_Node getNode() {

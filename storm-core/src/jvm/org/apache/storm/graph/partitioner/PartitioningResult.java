@@ -1,5 +1,7 @@
 package org.apache.storm.graph.partitioner;
 
+import org.apache.storm.graph.Graph;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,9 +16,10 @@ public class PartitioningResult {
     private List<Integer> bestLoadCPU, bestLoadMEM;
     private int[] bestSelection;
     private double bestCost;
+    private Graph graph;
     private Map<Integer, Partition> partitions;
 
-    public PartitioningResult(long elapsedTime, float usedMemory, int iteration,
+    public PartitioningResult(Graph graph, long elapsedTime, float usedMemory, int iteration,
                               List<Integer> bestLoadCPU, List<Integer> bestLoadMEM,
                               int bestCut, int[] bestSelection, double bestCost) {
         this.elapsedTime = elapsedTime;
@@ -28,6 +31,15 @@ public class PartitioningResult {
         this.bestSelection = bestSelection;
         this.bestCost = bestCost;
         this.partitions = new LinkedHashMap<>();
+        this.graph=graph;
+    }
+
+    public Graph getGraph() {
+        return graph;
+    }
+
+    public void setGraph(Graph graph) {
+        this.graph = graph;
     }
 
     public long getElapsedTime() {
