@@ -154,6 +154,13 @@ public class myStrategy implements IStrategy {
                 if (targetSlot.getNodeId() == partition.getNode().getId()) {
                     //otherwise: exec already has been migrated
                     schedulerAssignmentMap.get(targetSlot).remove(exec);
+                    //_cluster.getAssignments().get(td.getId()).getExecutorToSlot().remove(exec);
+                    //remove assignment record for this slot if it is(becomes) empty
+                    if(schedulerAssignmentMap.get(targetSlot).size()==0) {
+                        schedulerAssignmentMap.remove(targetSlot);
+                        //_cluster.freeSlot(targetSlot);
+
+                    }
                     //currentPartitions.get(partition.getId()).getVertices().remove(vertex);
                 }
             } else { // it's unassigned executor & should be assigned
@@ -312,6 +319,7 @@ public class myStrategy implements IStrategy {
 
             schedulerAssignmentMap.get(targetSlot).add(exec);
             targetNode.consumeResourcesforTask(exec, td);
+            //_nodes.getNodeById(partition.getNode().getId()).consumeResourcesforTask(exec, td);
             scheduledTasks.add(exec);
             LOG.info("TASK {}:{} assigned to Node: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on slot: {} on Rack: {}", exec, td.getExecutorToComponent().get(exec),
 

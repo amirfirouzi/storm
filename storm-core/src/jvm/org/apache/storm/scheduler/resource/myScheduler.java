@@ -327,6 +327,39 @@ public class myScheduler implements IScheduler {
 
             Map<WorkerSlot, Double[]> workerResources = new HashMap<WorkerSlot, Double[]>();
 
+            Map<ExecutorDetails, WorkerSlot> newAssignmentExecutorToWorker = new LinkedHashMap<>();
+            for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> wsExecs :
+                    schedulerAssignmentMap.entrySet()) {
+                for (ExecutorDetails exec :
+                        wsExecs.getValue()) {
+                    if (!newAssignmentExecutorToWorker.containsKey(exec)) {
+                        newAssignmentExecutorToWorker.put(exec, wsExecs.getKey());
+                    }
+                }
+            }
+            Map<String, SchedulerAssignment> clusterSchedulingState = schedulingState.cluster.getAssignments();
+            Map<WorkerSlot, Collection<ExecutorDetails>> clusterSlotToExecutors;
+            if ((!clusterSchedulingState.isEmpty()) &&
+                    (!clusterSchedulingState.get(td.getId()).getExecutorToSlot().isEmpty())) {
+                clusterSlotToExecutors = clusterSchedulingState.get(td.getId()).getSlotToExecutors();
+                WorkerSlot ws;
+                for (Map.Entry<ExecutorDetails, WorkerSlot> execToWorker :
+                        newAssignmentExecutorToWorker.entrySet()) {
+                    ExecutorDetails ex;
+                    WorkerSlot worker = findWorkerInAssignment(execToWorker.getKey(), clusterSlotToExecutors);
+                    ex = findExecuterInAssignment(execToWorker.getKey(),
+                            clusterSlotToExecutors.get(worker));
+                    ws = clusterSchedulingState.get(td.getId()).getExecutorToSlot().get(ex);
+                    if (ws.getNodeId() != execToWorker.getValue().getNodeId() ||
+                            ws.getPort() != execToWorker.getValue().getPort()) {
+                        if (worker != null) {
+                            clusterSlotToExecutors.get(worker).remove(ex);
+                            clusterSchedulingState.get(td.getId()).getExecutorToSlot().remove(ex, worker);
+                        }
+                    }
+                }
+            }
+
             Set<String> nodesUsed = new HashSet<String>();
             for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> workerToTasksEntry : schedulerAssignmentMap.entrySet()) {
                 WorkerSlot targetSlot = workerToTasksEntry.getKey();
@@ -370,6 +403,27 @@ public class myScheduler implements IScheduler {
             LOG.warn("schedulerAssignmentMap for topo {} is null. This shouldn't happen!", td.getName());
             return false;
         }
+    }
+
+    private ExecutorDetails findExecuterInAssignment(ExecutorDetails exec, Collection<ExecutorDetails> executers) {
+        for (ExecutorDetails executor :
+                executers) {
+            if (exec.toString().equals(executor.toString()))
+                return executor;
+        }
+        return null;
+    }
+
+    private WorkerSlot findWorkerInAssignment(ExecutorDetails exec, Map<WorkerSlot, Collection<ExecutorDetails>> assignments) {
+        for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> assignment :
+                assignments.entrySet()) {
+            for (ExecutorDetails executor :
+                    assignment.getValue()) {
+                if (exec.toString().equals(executor.toString()))
+                    return assignment.getKey();
+            }
+        }
+        return null;
     }
 
     private WorkerSlot allocateResourceToSlot(TopologyDetails td, Collection<ExecutorDetails> executors, WorkerSlot slot) {
