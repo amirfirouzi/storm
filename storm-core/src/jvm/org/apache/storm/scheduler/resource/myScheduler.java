@@ -151,6 +151,7 @@ public class myScheduler implements IScheduler {
     public void initialScheduleTopology(TopologyDetails td) {
 
         Graph graph = TopologyGraphBuilder.buildGraph(td);
+        LOG.info("Generated Graph:\n {}", graph);
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
         lastPartitioning.put(td.getId(), partitioning);
         scheduleTopology(td, partitioning, false);
@@ -160,7 +161,7 @@ public class myScheduler implements IScheduler {
     public void reScheduleTopology(TopologyDetails td) {
 
         Graph graph = TopologyGraphBuilder.buildGraph(td);
-
+        LOG.info("Generated Graph:\n {}", graph);
         List<ExecutorPair> traffic = new ArrayList<>();
         try {
             traffic = DataManager.getInstance().getInterExecutorTrafficList(td.getId());
@@ -327,6 +328,9 @@ public class myScheduler implements IScheduler {
 
             Map<WorkerSlot, Double[]> workerResources = new HashMap<WorkerSlot, Double[]>();
 
+
+            //region diff Assignments
+            //Added Part To compare New Assignment with latest cluster assignment
             Map<ExecutorDetails, WorkerSlot> newAssignmentExecutorToWorker = new LinkedHashMap<>();
             for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> wsExecs :
                     schedulerAssignmentMap.entrySet()) {
@@ -342,6 +346,9 @@ public class myScheduler implements IScheduler {
             if ((!clusterSchedulingState.isEmpty()) &&
                     (!clusterSchedulingState.get(td.getId()).getExecutorToSlot().isEmpty())) {
                 clusterSlotToExecutors = clusterSchedulingState.get(td.getId()).getSlotToExecutors();
+
+                LOG.info(ConversionUtils.assignmentToString(clusterSlotToExecutors, "Cluster Assignments(Before)"));
+
                 WorkerSlot ws;
                 for (Map.Entry<ExecutorDetails, WorkerSlot> execToWorker :
                         newAssignmentExecutorToWorker.entrySet()) {
@@ -358,7 +365,11 @@ public class myScheduler implements IScheduler {
                         }
                     }
                 }
+                LOG.info(ConversionUtils.assignmentToString(clusterSlotToExecutors, "Cluster Assignments(After)"));
             }
+
+            LOG.info(ConversionUtils.assignmentToString(schedulerAssignmentMap, "New Assignments"));
+            //endregion
 
             Set<String> nodesUsed = new HashSet<String>();
             for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> workerToTasksEntry : schedulerAssignmentMap.entrySet()) {

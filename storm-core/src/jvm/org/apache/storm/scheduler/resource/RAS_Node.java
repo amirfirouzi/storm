@@ -18,25 +18,12 @@
 
 package org.apache.storm.scheduler.resource;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
-import java.util.ArrayList;
-
-import org.apache.storm.scheduler.Topologies;
-import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.storm.scheduler.Cluster;
-import org.apache.storm.scheduler.ExecutorDetails;
-import org.apache.storm.scheduler.SchedulerAssignment;
-import org.apache.storm.scheduler.SupervisorDetails;
-import org.apache.storm.scheduler.WorkerSlot;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * Represents a single node in the cluster.
@@ -230,8 +217,8 @@ public class RAS_Node {
 
         double memUsed = getMemoryUsedByWorker(ws);
         double cpuUsed = getCpuUsedByWorker(ws);
-        freeMemory(memUsed);
-        freeCPU(cpuUsed);
+        freeMemory(memUsed, ws);
+        freeCPU(cpuUsed, ws);
 
         //free slot
         _cluster.freeSlot(ws);
@@ -239,22 +226,46 @@ public class RAS_Node {
         _topIdToUsedSlots.get(topo.getId()).remove(ws.getId());
     }
 
-    private void freeMemory(double amount) {
+    private void freeMemory(double amount, ExecutorDetails exec) {
         LOG.debug("freeing {} memory on node {}...avail mem: {}", amount, getHostname(), _availMemory);
         if ((_availMemory + amount) > getTotalMemoryResources()) {
-            LOG.warn("Freeing more memory than there exists! Memory trying to free: {} Total memory on Node: {}", (_availMemory + amount), getTotalMemoryResources());
+            LOG.warn("Freeing more memory than there exists for exec{}! Memory trying to free: {} Total memory on Node: {}", exec, (_availMemory + amount), getTotalMemoryResources());
             return;
         }
         _availMemory += amount;
+        LOG.info("{} mem freed for task {}", amount, exec);
     }
 
-    private void freeCPU(double amount) {
+    private void freeMemory(double amount, WorkerSlot ws) {
+        LOG.debug("freeing {} memory on node {}...avail mem: {}", amount, getHostname(), _availMemory);
+        if ((_availMemory + amount) > getTotalMemoryResources()) {
+            LOG.warn("Freeing more memory than there exists for Slot{}! Memory trying to free: {} Total memory on Node: {}",
+                    ws.getNodeId() + ":(" + ws.getPort() + ")", (_availMemory + amount), getTotalMemoryResources());
+            return;
+        }
+        _availMemory += amount;
+        LOG.info("{} mem freed for Slot {}", amount, ws);
+    }
+
+    private void freeCPU(double amount, ExecutorDetails exec) {
         LOG.debug("freeing {} CPU on node...avail CPU: {}", amount, getHostname(), _availCPU);
         if ((_availCPU + amount) > getTotalCpuResources()) {
-            LOG.warn("Freeing more CPU than there exists! CPU trying to free: {} Total CPU on Node: {}", (_availCPU + amount), getTotalCpuResources());
+            LOG.warn("Freeing more CPU than there exists for exec{}! CPU trying to free: {} Total CPU on Node: {}", exec, (_availCPU + amount), getTotalCpuResources());
             return;
         }
         _availCPU += amount;
+        LOG.info("{} cpu freed for task {}", amount, exec);
+    }
+
+    private void freeCPU(double amount, WorkerSlot ws) {
+        LOG.debug("freeing {} CPU on node...avail CPU: {}", amount, getHostname(), _availCPU);
+        if ((_availCPU + amount) > getTotalCpuResources()) {
+            LOG.warn("Freeing more CPU than there exists for Slot{}! CPU trying to free: {} Total CPU on Node: {}",
+                    ws.getNodeId() + ":(" + ws.getPort() + ")", (_availCPU + amount), getTotalCpuResources());
+            return;
+        }
+        _availCPU += amount;
+        LOG.info("{} mem freed for Slot {}", amount, ws);
     }
 
     /**
@@ -328,8 +339,14 @@ public class RAS_Node {
         if (target == null) {
             target = getFreeSlots().iterator().next();
         }
+        String execNames = "";
+        for (ExecutorDetails exec :
+                executors) {
+            execNames += exec.toString() + ", ";
+        }
+
         if (!freeSlots.contains(target)) {
-            throw new IllegalStateException("Trying to assign already used slot" + target.getPort() + "on node " + _nodeId);
+            throw new IllegalStateException("Trying to assign already used slot " + target.getPort() + " on node " + _nodeId + " for Executors: " + execNames);
         }
         LOG.info("target slot: {}", target);
 
@@ -364,7 +381,7 @@ public class RAS_Node {
         return "{Node: " + ((_sup == null) ? "null (possibly down)" : _sup.getHost())
                 + ", Avail [ Mem: " + ((_availMemory == null) ? "N/A" : _availMemory.toString())
                 + ", CPU: " + ((_availCPU == null) ? "N/A" : _availCPU.toString()) + ", FreeSlots: " + this.getFreeSlots()
-                + "] Total [ Mem: " + ((_sup == null) ? "N/A" : this.getTotalMemoryResources())
+                + "] & Total [ Mem: " + ((_sup == null) ? "N/A" : this.getTotalMemoryResources())
                 + ", CPU: " + ((_sup == null) ? "N/A" : this.getTotalCpuResources()) + ", Slots: "
                 + this._slots.values() + " ]}";
     }
@@ -466,7 +483,7 @@ public class RAS_Node {
      */
     public Double consumeMemory(Double amount, ExecutorDetails exec) {
         if (amount > _availMemory) {
-            LOG.error("Attempting to consume more memory than available! Needed: {}, we only have: {} for task{}", amount, _availMemory,exec);
+            LOG.error("Attempting to consume more memory than available! Needed: {}, we only have: {} for task{}", amount, _availMemory, exec);
             throw new IllegalStateException("Attempting to consume more memory than available");
         }
         _availMemory = _availMemory - amount;
@@ -522,8 +539,12 @@ public class RAS_Node {
     public void consumeResourcesforTask(ExecutorDetails exec, TopologyDetails topo) {
         Double taskMemReq = topo.getTotalMemReqTask(exec);
         Double taskCpuReq = topo.getTotalCpuReqTask(exec);
-        consumeCPU(taskCpuReq);
-        consumeMemory(taskMemReq,exec);
+        try {
+            consumeCPU(taskCpuReq);
+            consumeMemory(taskMemReq, exec);
+        } catch (Exception e) {
+            LOG.error(e.getMessage() + "for exec:{}", exec.toString());
+        }
     }
 
     /**
@@ -535,7 +556,7 @@ public class RAS_Node {
     public void freeResourcesForTask(ExecutorDetails exec, TopologyDetails topo) {
         Double taskMemReq = topo.getTotalMemReqTask(exec);
         Double taskCpuReq = topo.getTotalCpuReqTask(exec);
-        freeCPU(taskCpuReq);
-        freeMemory(taskMemReq);
+        freeCPU(taskCpuReq, exec);
+        freeMemory(taskMemReq, exec);
     }
 }

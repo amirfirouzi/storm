@@ -51,7 +51,7 @@ public class myStrategy implements IStrategy {
     public SchedulingResult reSchedule(TopologyDetails td,
                                        PartitioningResult currentPartitioning,
                                        PartitioningResult newPartitioning) {
-
+        LOG.info("Starting Rescheduling");
         if (_nodes.getNodes().size() <= 0) {
             LOG.warn("No available nodes to schedule tasks on!");
             return SchedulingResult.failure(SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES, "No available nodes to schedule tasks on!");
@@ -86,6 +86,10 @@ public class myStrategy implements IStrategy {
             removeSimiliarElements(toBeRemoved, toBeMigrated);
             removeSimiliarElements(toBeMigrated, currentPartitioningVertices);
 
+            LOG.info("\nPartition: {} node: {}", partition.getKey().toString(), partition.getValue().getNode().getId());
+            LOG.info(ConversionUtils.verticesToString(toBeRemoved, "toBeRemoved"));
+            LOG.info(ConversionUtils.verticesToString(toBeMigrated, "toBeMigrated"));
+
             //region Remove toBeRemoved Tasks from current partitions & Free Resources
             for (Vertex vertex :
                     toBeRemoved) {
@@ -109,8 +113,13 @@ public class myStrategy implements IStrategy {
 
         Map<WorkerSlot, Collection<ExecutorDetails>> schedulerAssignmentMap = new HashMap<>(oldSchedulerAssignmentMap);
 
+        LOG.info(ConversionUtils.execsToString(scheduledTasks, "scheduledTasks"));
+
         executorsNotScheduled.removeAll(scheduledTasks);
-        LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
+
+        LOG.info(ConversionUtils.execsToString(executorsNotScheduled, "executorsNotScheduled"));
+
+        LOG.info("/* Scheduling left over task (most likely sys tasks) */");
         // schedule left over system tasks
         for (ExecutorDetails exec : executorsNotScheduled) {
             scheduleExecutor(exec, td, schedulerAssignmentMap, scheduledTasks);
@@ -142,28 +151,39 @@ public class myStrategy implements IStrategy {
                                Collection<ExecutorDetails> scheduledTasks,
                                Map<Integer, Partition> currentPartitions) {
         ExecutorDetails exec = vertex.getExecutor();
-        LOG.info("Attempting to remove: {} of component {} [ REQ {} ] from Node: {} due to migration",
-                exec, td.getExecutorToComponent().get(exec),
-                td.getTaskResourceReqList(exec),
-                partition.getNode().getId());
         if (_cluster.getAssignments() != null) {
-            partition.getNode().freeResourcesForTask(exec, td);
-            _nodes.getNodeById(partition.getNode().getId()).freeResourcesForTask(exec, td);
             WorkerSlot targetSlot = executorToWorkerSlotMap.get(exec);
             if (targetSlot != null && schedulerAssignmentMap.containsKey(targetSlot)) {
-                if (targetSlot.getNodeId() == partition.getNode().getId()) {
+                LOG.info("Attempting to remove: {}:{}  from Node: {} Port:{} due to migration, [ REQ {} ]",
+                        td.getExecutorToComponent().get(exec), exec,
+                        targetSlot.getNodeId(),
+                        targetSlot.getPort(),
+                        td.getTaskResourceReqList(exec));
+                partition.getNode().freeResourcesForTask(exec, td);
+                _nodes.getNodeById(partition.getNode().getId()).freeResourcesForTask(exec, td);
+                if (targetSlot.getNodeId().equals(partition.getNode().getId())) {
                     //otherwise: exec already has been migrated
                     schedulerAssignmentMap.get(targetSlot).remove(exec);
+
                     //_cluster.getAssignments().get(td.getId()).getExecutorToSlot().remove(exec);
                     //remove assignment record for this slot if it is(becomes) empty
-                    if(schedulerAssignmentMap.get(targetSlot).size()==0) {
+                    LOG.info("Removed: {}:{} from Node: {} Port:{} due to migration, [ RES Freed {} ]",
+                            td.getExecutorToComponent().get(exec), exec,
+                            targetSlot.getNodeId(),
+                            targetSlot.getPort(),
+                            td.getTaskResourceReqList(exec));
+                    if (schedulerAssignmentMap.get(targetSlot).size() == 0) {
                         schedulerAssignmentMap.remove(targetSlot);
+                        LOG.info("Slot is Empty:{} port:{}", targetSlot.getId(), targetSlot.getPort());
                         //_cluster.freeSlot(targetSlot);
 
                     }
                     //currentPartitions.get(partition.getId()).getVertices().remove(vertex);
                 }
             } else { // it's unassigned executor & should be assigned
+                LOG.info("Not Removed {}:{}: slot-nodeId({}) != partition-nodeId({})",
+                        td.getExecutorToComponent().get(exec), exec,
+                        targetSlot.getNodeId(), partition.getNode().getId());
             }
             if (scheduledTasks.contains(exec))
                 scheduledTasks.remove(exec);
@@ -194,11 +214,11 @@ public class myStrategy implements IStrategy {
 
         removeExecutor(vertex, td, fromPartition, schedulerAssignmentMap, executorToWorkerSlotMap,
                 scheduledTasks, currentPartitions);
-        LOG.info("Attempting to migrate: {} of component {} [ REQ {} ] from Node: {} to Node: {}",
-                exec, td.getExecutorToComponent().get(exec),
-                td.getTaskResourceReqList(exec),
+        LOG.info("Attempting to migrate: {}:{} from Node: {} to Node: {}, [ REQ {} ]",
+                td.getExecutorToComponent().get(exec), exec,
                 fromPartition.getNode().getId(),
-                toPartition.getNode().getId());
+                toPartition.getNode().getId(),
+                td.getTaskResourceReqList(exec));
         scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, toPartition);
     }
 
@@ -236,8 +256,8 @@ public class myStrategy implements IStrategy {
             for (Vertex vertex :
                     partition.getValue().getVertices()) {
                 ExecutorDetails exec = vertex.getExecutor();
-                LOG.info("Attempting to schedule: {} of component {} [ REQ {} ]",
-                        exec, td.getExecutorToComponent().get(exec),
+                LOG.info("Attempting to schedule: {}:{} [ REQ {} ]",
+                        td.getExecutorToComponent().get(exec), exec,
                         td.getTaskResourceReqList(exec));
                 scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, partition.getValue());
                 SupervisorDetails s = _cluster.getSupervisorById(partition.getValue().getNode().getId());
@@ -321,11 +341,11 @@ public class myStrategy implements IStrategy {
             targetNode.consumeResourcesforTask(exec, td);
             //_nodes.getNodeById(partition.getNode().getId()).consumeResourcesforTask(exec, td);
             scheduledTasks.add(exec);
-            LOG.info("TASK {}:{} assigned to Node: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on slot: {} on Rack: {}", exec, td.getExecutorToComponent().get(exec),
+            LOG.info("TASK {}:{} assigned to Node: {} on slot: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on Rack: {}", exec, td.getExecutorToComponent().get(exec),
 
-                    targetNode.getHostname(), targetNode.getAvailableMemoryResources(),
+                    targetNode.getHostname(), targetSlot, targetNode.getAvailableMemoryResources(),
                     targetNode.getAvailableCpuResources(), targetNode.getTotalMemoryResources(),
-                    targetNode.getTotalCpuResources(), targetSlot, nodeToRack(targetNode));
+                    targetNode.getTotalCpuResources(), nodeToRack(targetNode));
         } else {
             LOG.error("Not Enough Resources to schedule Task {}", exec);
         }
@@ -351,11 +371,11 @@ public class myStrategy implements IStrategy {
             schedulerAssignmentMap.get(targetSlot).add(exec);
             targetNode.consumeResourcesforTask(exec, td);
             scheduledTasks.add(exec);
-            LOG.info("TASK {}:{} assigned to Node: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on slot: {} on Rack: {}", exec, td.getExecutorToComponent().get(exec),
+            LOG.info("TASK {}:{} assigned to Node: {} on slot: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on Rack: {}", exec, td.getExecutorToComponent().get(exec),
 
-                    targetNode.getHostname(), targetNode.getAvailableMemoryResources(),
+                    targetNode.getHostname(),targetSlot, targetNode.getAvailableMemoryResources(),
                     targetNode.getAvailableCpuResources(), targetNode.getTotalMemoryResources(),
-                    targetNode.getTotalCpuResources(), targetSlot, nodeToRack(targetNode));
+                    targetNode.getTotalCpuResources(), nodeToRack(targetNode));
         } else {
             LOG.error("Not Enough Resources to schedule Task {}", exec);
         }
