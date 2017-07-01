@@ -4,7 +4,7 @@ topology.scheduler.strategy: "org.apache.storm.scheduler.resource.strategies.sch
 traffic.improvement: 50
 reschedule.timeout: 20
 nimbus.monitor.freq.secs: 10
-
+supervisor.memory.capacity.mb: 4000
 
 #Adaptive Scheduler Configs
 jdbc.driver: "com.mysql.jdbc.Driver"

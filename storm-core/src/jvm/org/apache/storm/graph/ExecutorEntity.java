@@ -6,24 +6,22 @@ import org.apache.storm.scheduler.ExecutorDetails;
  * Created by amir on 2/7/17.
  */
 public class ExecutorEntity {
-    private String componentyName;
+    private String componentName;
     private String instanceId;
-    private String executorName;
     private ExecutorDetails executor;
 
-    public ExecutorEntity(String componentyName, String instanceId, ExecutorDetails executor) {
-        this.componentyName = componentyName;
+    public ExecutorEntity(String componentName, String instanceId, ExecutorDetails executor) {
+        this.componentName = componentName;
         this.instanceId = instanceId;
-        this.executorName = executorName;
         this.executor = executor;
     }
 
-    public String getComponentyName() {
-        return componentyName;
+    public String getComponentName() {
+        return componentName;
     }
 
-    public void setComponentyName(String componentyName) {
-        this.componentyName = componentyName;
+    public void setComponentName(String componentName) {
+        this.componentName = componentName;
     }
 
     public String getInstanceId() {
@@ -32,14 +30,6 @@ public class ExecutorEntity {
 
     public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
-    }
-
-    public String getExecutorName() {
-        return executorName;
-    }
-
-    public void setExecutorName(String executorName) {
-        this.executorName = executorName;
     }
 
     public ExecutorDetails getExecutor() {

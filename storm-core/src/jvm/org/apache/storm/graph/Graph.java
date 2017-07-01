@@ -63,7 +63,7 @@ public class Graph {
 
     public Vertex addVertex(ExecutorEntity exec) {
         Vertex v;
-        String name = exec.getComponentyName() + "-" + exec.getInstanceId();
+        String name = exec.getComponentName() + "-" + exec.getInstanceId();
         v = vertices.get(name);
         if (v == null) {
             v = new Vertex(name, exec.getExecutor());
@@ -73,7 +73,7 @@ public class Graph {
             vertices.put(name, v);
             executors.put(exec.getExecutor().toString(), exec.getExecutor());
             verticesIds.put(numOfVertices, name);
-            execsToVertices.put(exec.getExecutorName(), name);
+            execsToVertices.put(exec.getExecutor().toString(), name);
             adjList.put(v, new TreeSet<Vertex>());
 
         }
@@ -82,7 +82,7 @@ public class Graph {
 
     public Vertex addVertex(ExecutorEntity exec, Resource weights) {
         Vertex v;
-        String vertexName = exec.getComponentyName() + "-" + exec.getInstanceId();
+        String vertexName = exec.getComponentName() + "-" + exec.getInstanceId();
         v = vertices.get(vertexName);
         if (v == null) {
             v = new Vertex(vertexName, exec.getExecutor(), weights);
@@ -140,8 +140,8 @@ public class Graph {
     public Edge addEdge(ExecutorEntity execFrom, ExecutorEntity execTo) {
         Vertex src;
         Vertex dest;
-        String from = execFrom.getComponentyName() + "-" + execFrom.getInstanceId();
-        String to = execTo.getComponentyName() + "-" + execTo.getInstanceId();
+        String from = execFrom.getComponentName() + "-" + execFrom.getInstanceId();
+        String to = execTo.getComponentName() + "-" + execTo.getInstanceId();
         Edge edge = getEdge(from, to);
         if (edge != null) {
             return edge;
@@ -191,17 +191,17 @@ public class Graph {
     public String toString() {
         String str = "";
         for (Vertex v : this.getVertices()) {
-            str += String.format("%s%s: ", v, v.getWeightsString());
-
-            for (Vertex w : this.adjacentTo(v.getName())) {
-                Edge e = this.getEdge(v.getName(), w.getName());
-                String ew = "";
-                if (e != null) {
-                    ew = e.getWeightString();
-                }
-                str += String.format("%s->%s%s", ew, w, w.getWeightsString());
-            }
-            str += "\n";
+//            str += String.format("%s%s: ", v, v.getWeightsString());
+//
+//            for (Vertex w : this.adjacentTo(v.getName())) {
+//                Edge e = this.getEdge(v.getName(), w.getName());
+//                String ew = "";
+//                if (e != null) {
+//                    ew = e.getWeightString();
+//                }
+//                str += String.format("%s->%s%s", ew, w, w.getWeightsString());
+//            }
+            str += v + "\n";
         }
         return str;
     }

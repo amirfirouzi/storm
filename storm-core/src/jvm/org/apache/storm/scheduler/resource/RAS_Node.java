@@ -254,7 +254,7 @@ public class RAS_Node {
             return;
         }
         _availCPU += amount;
-        LOG.info("{} cpu freed for task {}", amount, exec);
+        LOG.info("{} cpu freed for task {} for node{}", amount, exec, this.getId());
     }
 
     private void freeCPU(double amount, WorkerSlot ws) {
@@ -543,7 +543,9 @@ public class RAS_Node {
             consumeCPU(taskCpuReq);
             consumeMemory(taskMemReq, exec);
         } catch (Exception e) {
-            LOG.error(e.getMessage() + "for exec:{}", exec.toString());
+            String message = e.getMessage() + " for exec:" + exec.toString();
+            LOG.error(message);
+            throw new IllegalStateException(message);
         }
     }
 
