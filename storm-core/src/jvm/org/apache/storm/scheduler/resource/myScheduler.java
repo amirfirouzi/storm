@@ -363,6 +363,7 @@ public class myScheduler implements IScheduler {
                     //current exec(execToWorker.getKey()) is moved to another ws, so it should be removed from last assignment and also from cluster
                     if (!clusterWorker.getNodeId().equals(execToWorker.getValue().getNodeId()) ||
                             clusterWorker.getPort() != execToWorker.getValue().getPort()) {
+//                            schedulerAssignmentMap.remove(execToWorker.getValue());
                             clusterSlotToExecutors.get(clusterWorker).remove(clusterExecutor);
                             clusterSchedulingState.get(td.getId()).getExecutorToSlot().remove(clusterExecutor, clusterWorker);
                     }
