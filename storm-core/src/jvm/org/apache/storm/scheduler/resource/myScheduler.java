@@ -331,14 +331,21 @@ public class myScheduler implements IScheduler {
 
             //region diff Assignments
 
-            //initialize newAssignmentExecutorToWorker a Map from Exec to Worker of new Assignment
+            //initialize newAssignmentExecutorToWorker a Map of Execs to Workers of new Assignment
+            // and remove Null Slots from assignment
+            List<WorkerSlot> nullAssignments = new ArrayList<>();
+
             Map<ExecutorDetails, WorkerSlot> newAssignmentExecutorToWorker = new LinkedHashMap<>();
             for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> wsExecs :
                     schedulerAssignmentMap.entrySet()) {
-                for (ExecutorDetails exec :
-                        wsExecs.getValue()) {
-                    if (!newAssignmentExecutorToWorker.containsKey(exec)) {
-                        newAssignmentExecutorToWorker.put(exec, wsExecs.getKey());
+                if (wsExecs.getValue().isEmpty()) {
+                    nullAssignments.add(wsExecs.getKey());
+                } else {
+                    for (ExecutorDetails exec :
+                            wsExecs.getValue()) {
+                        if (!newAssignmentExecutorToWorker.containsKey(exec)) {
+                            newAssignmentExecutorToWorker.put(exec, wsExecs.getKey());
+                        }
                     }
                 }
             }
@@ -353,20 +360,32 @@ public class myScheduler implements IScheduler {
                 LOG.info(SchedulingUtils.assignmentToString(clusterSlotToExecutors, "Cluster Assignments(Before)"));
 
                 WorkerSlot ws;
-                for (Map.Entry<ExecutorDetails, WorkerSlot> execToWorker :
+                for (Map.Entry<ExecutorDetails, WorkerSlot> assignment :
                         newAssignmentExecutorToWorker.entrySet()) {
-                    ExecutorDetails clusterExecutor;
-                    WorkerSlot clusterWorker = findWorkerInAssignment(execToWorker.getKey(), clusterSlotToExecutors);
-                    clusterExecutor = findExecuterInAssignment(execToWorker.getKey(),
+                    //find exact worker and exec object instances in cluster assignments(past assignment)
+                    WorkerSlot clusterWorker = findWorkerInAssignment(assignment.getKey(), clusterSlotToExecutors);
+                    ExecutorDetails clusterExecutor = findExecuterInAssignment(assignment.getKey(),
                             clusterSlotToExecutors.get(clusterWorker));
-//                    ws = clusterSchedulingState.get(td.getId()).getExecutorToSlot().get(clusterExecutor);
-                    //current exec(execToWorker.getKey()) is moved to another ws, so it should be removed from last assignment and also from cluster
-                    if (!clusterWorker.getNodeId().equals(execToWorker.getValue().getNodeId()) ||
-                            clusterWorker.getPort() != execToWorker.getValue().getPort()) {
-//                            schedulerAssignmentMap.remove(execToWorker.getValue());
-                            clusterSlotToExecutors.get(clusterWorker).remove(clusterExecutor);
-                            clusterSchedulingState.get(td.getId()).getExecutorToSlot().remove(clusterExecutor, clusterWorker);
+                    if (clusterSlotToExecutors.get(clusterWorker).isEmpty()) {
+                        clusterSlotToExecutors.remove(clusterWorker);
+                        schedulingState.cluster.freeSlot(clusterWorker);
                     }
+                    // it means that current exec(execToWorker.getKey()) is moved to another ws,
+                    // so it should be removed from last assignment and also from cluster
+                    if (!clusterWorker.equals(assignment.getValue())) {
+//                            schedulerAssignmentMap.remove(execToWorker.getValue());
+                        clusterSlotToExecutors.get(clusterWorker).remove(clusterExecutor);
+                        clusterSchedulingState.get(td.getId()).getExecutorToSlot().remove(clusterExecutor, clusterWorker);
+                    }
+                }
+
+                for (WorkerSlot worker :
+                        nullAssignments) {
+                    schedulerAssignmentMap.remove(worker);
+                }
+                for (WorkerSlot worker :
+                        clusterSlotToExecutors.keySet()) {
+                    schedulerAssignmentMap.remove(worker);
                 }
                 LOG.info(SchedulingUtils.assignmentToString(clusterSlotToExecutors, "Cluster Assignments(After)"));
             }
