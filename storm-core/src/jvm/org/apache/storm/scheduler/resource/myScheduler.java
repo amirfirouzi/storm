@@ -46,6 +46,7 @@ public class myScheduler implements IScheduler {
     //    private Map<String, Long> lastRescheduledTopologies;
     private Map<String, PartitioningResult> lastPartitioning;
     private long lastRescheduling;
+    private Map<String, Graph> topoGraphs;
 
     @SuppressWarnings("rawtypes")
     private Map conf;
@@ -56,7 +57,22 @@ public class myScheduler implements IScheduler {
     @Override
     public void prepare(Map conf) {
         this.conf = conf;
+        if (lastPartitioning == null)
+            lastPartitioning = new LinkedHashMap<>();
+        topoGraphs = new HashMap<>();
 
+    }
+
+    private void initialize(Topologies topologies, Cluster cluster) {
+        Map<String, User> userMap = getUsers(topologies, cluster);
+        this.schedulingState = new SchedulingState(userMap, cluster, topologies, this.conf);
+        for (TopologyDetails td :
+                topologies.getTopologies()) {
+            Graph graph = TopologyGraphBuilder.buildGraph(td);
+            if (!topoGraphs.containsKey(td.getId())) {
+                topoGraphs.put(td.getId(), graph);
+            }
+        }
     }
 
     @Override
@@ -111,9 +127,7 @@ public class myScheduler implements IScheduler {
                 reScheduleTopology(td);
             } else {// First Time To Schedule this topology(initial Partitioning)
                 initialScheduleTopology(td);
-//                trafficImprovement = Integer.parseInt(topology.getConf().get(TRAFFIC_IMPROVEMENT).toString());
             }
-//                lastRescheduledTopologies.put(td.getId(), System.currentTimeMillis());
             lastRescheduling = System.currentTimeMillis();
             topologiesToBeRemoved.remove(td.getId());
             LOG.debug("Configuration of topology " + td.getId());
@@ -150,7 +164,7 @@ public class myScheduler implements IScheduler {
 
     public void initialScheduleTopology(TopologyDetails td) {
 
-        Graph graph = TopologyGraphBuilder.buildGraph(td);
+        Graph graph = topoGraphs.get(td.getId());
         LOG.info("Generated Graph:\n {}", graph);
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
         lastPartitioning.put(td.getId(), partitioning);
@@ -160,7 +174,7 @@ public class myScheduler implements IScheduler {
 
     public void reScheduleTopology(TopologyDetails td) {
 
-        Graph graph = TopologyGraphBuilder.buildGraph(td);
+        Graph graph = topoGraphs.get(td.getId());
         LOG.info("Generated Graph:\n {}", graph);
         List<ExecutorPair> traffic = new ArrayList<>();
         try {
@@ -183,14 +197,20 @@ public class myScheduler implements IScheduler {
         lastPartitioning.put(td.getId(), partitioning);
     }
 
-
     public boolean isPartitioningImproved(String td, PartitioningResult newPartitioning) {
         //TODO: now only considers crosscut, ADD loads and other factors too
-        if ((newPartitioning.getBestCut() < lastPartitioning.get(td).getBestCut())
-                || (!lastPartitioning.get(td).getGraph().doesEdgesHaveWeight())) {
+        int newCut = newPartitioning.getBestCut();
+        int lastCut = lastPartitioning.get(td).getBestCut();
+        boolean weightedGraph = newPartitioning.getGraph().doesEdgesHaveWeight();
+        if ((newCut < lastCut) || (!weightedGraph)) {
+            LOG.info("\n****************Partitioning is Improved: lastCut={}, newCut={}, Weighted:{}\n",
+                    lastCut, newCut, weightedGraph);
             return true;
-        } else
+        } else {
+            LOG.info("\n****************Partitioning is NOT Improved: lastCut={}, newCut={}, Weighted:{}\n",
+                    lastCut, newCut, weightedGraph);
             return false;
+        }
 
     }
 
@@ -373,7 +393,6 @@ public class myScheduler implements IScheduler {
                     // it means that current exec(execToWorker.getKey()) is moved to another ws,
                     // so it should be removed from last assignment and also from cluster
                     if (!clusterWorker.equals(assignment.getValue())) {
-//                            schedulerAssignmentMap.remove(execToWorker.getValue());
                         clusterSlotToExecutors.get(clusterWorker).remove(clusterExecutor);
                         clusterSchedulingState.get(td.getId()).getExecutorToSlot().remove(clusterExecutor, clusterWorker);
                     }
@@ -439,10 +458,12 @@ public class myScheduler implements IScheduler {
     }
 
     private ExecutorDetails findExecuterInAssignment(ExecutorDetails exec, Collection<ExecutorDetails> executers) {
-        for (ExecutorDetails executor :
-                executers) {
-            if (exec.toString().equals(executor.toString()))
-                return executor;
+        if (exec != null && executers != null) {
+            for (ExecutorDetails executor :
+                    executers) {
+                if (exec.toString().equals(executor.toString()))
+                    return executor;
+            }
         }
         return null;
     }
@@ -537,15 +558,6 @@ public class myScheduler implements IScheduler {
             }
         }
         return userMap;
-    }
-
-    private void initialize(Topologies topologies, Cluster cluster) {
-        Map<String, User> userMap = getUsers(topologies, cluster);
-        this.schedulingState = new SchedulingState(userMap, cluster, topologies, this.conf);
-//        if (lastRescheduledTopologies == null)
-//            lastRescheduledTopologies = new HashMap<>();
-        if (lastPartitioning == null)
-            lastPartitioning = new LinkedHashMap<>();
     }
 
     /**

@@ -79,9 +79,15 @@ public class myStrategy implements IStrategy {
 
             Partition newPartition = newPartitioning.getPartition(partition.getKey());
             List<Vertex> currentPartitioningVertices = new ArrayList<>(partition.getValue().getVertices());
-            List<Vertex> newPartitioningVertices = new ArrayList<>(newPartition.getVertices());
+
+            List<Vertex> newPartitioningVertices = null;
             List<Vertex> toBeRemoved = new ArrayList<>(currentPartitioning.getPartition(partition.getKey()).getVertices());
-            List<Vertex> toBeMigrated = new ArrayList<>(newPartitioningVertices);
+            List<Vertex> toBeMigrated = new ArrayList<>();
+            if (newPartition != null) {
+                newPartitioningVertices = new ArrayList<>(newPartition.getVertices());
+                toBeMigrated = new ArrayList<>(newPartitioningVertices);
+            } else
+                LOG.error("new Partition:{} is Null in new partitioning", partition.getKey());
 
 
             LOG.info("\nPartition: {} node: {}\n", partition.getKey().toString(), partition.getValue().getNode().getId());
@@ -107,7 +113,8 @@ public class myStrategy implements IStrategy {
             //region Migrate toBeMigrated Tasks from newPartition to currentPartition & Consume Resources for them
             for (Vertex vertex :
                     toBeMigrated) {
-                Partition migrateToPartition = currentPartitioning.getPartition(currentPartitioning.getExecuterPartitionId(vertex.getExecutor().toString()));
+                Partition migrateToPartition = currentPartitioning.getPartition(
+                        currentPartitioning.getExecuterPartitionId(vertex.getExecutor().toString()));
                 migrateExecutor(vertex, td, migrateToPartition, partition.getValue(), oldSchedulerAssignmentMap,
                         executorToWorkerSlotMap, scheduledTasks, currentPartitioning.getPartitions());
                 //add toBeMigrated execs to current partition's node
@@ -192,9 +199,9 @@ public class myStrategy implements IStrategy {
                         //currentPartitions.get(partition.getId()).getVertices().remove(vertex);
                     }
                 } else { // it's unassigned executor & should be assigned
-                    LOG.info("Not Removed {}:{}: slot-nodeId({}) != partition-nodeId({})",
+                    LOG.info("Not Removed {}:{}: slot({}) != partition-nodeId({})",
                             td.getExecutorToComponent().get(exec), exec,
-                            targetSlot.getNodeId(), partition.getNode().getId());
+                            targetSlot, partition.getNode().getId());
                 }
                 if (scheduledTasks.contains(exec))
                     scheduledTasks.remove(exec);
@@ -231,7 +238,11 @@ public class myStrategy implements IStrategy {
                 fromPartition.getNode().getId(),
                 toPartition.getNode().getId(),
                 td.getTaskResourceReqList(exec));
+//        try {
         scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, toPartition);
+//        } catch (IllegalStateException ex) {
+//            scheduleExecutor(exec, td, schedulerAssignmentMap, scheduledTasks);
+//        }
     }
 
     @Override
@@ -241,7 +252,7 @@ public class myStrategy implements IStrategy {
 
     @Override
     public SchedulingResult schedule(TopologyDetails td, PartitioningResult partitioning) {
-
+        LOG.info("Starting Scheduling");
         if (_nodes.getNodes().size() <= 0) {
             LOG.warn("No available nodes to schedule tasks on!");
             return SchedulingResult.failure(SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES, "No available nodes to schedule tasks on!");
@@ -257,9 +268,6 @@ public class myStrategy implements IStrategy {
             return SchedulingResult.failure(SchedulingStatus.FAIL_INVALID_TOPOLOGY, "Cannot find a Spout!");
         }
 
-        //order executors to be scheduled
-        //List<ExecutorDetails> orderedExecutors = orderExecutors(td, unassignedExecutors);
-
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
 
         for (Map.Entry<Integer, Partition> partition :
@@ -272,18 +280,9 @@ public class myStrategy implements IStrategy {
                         td.getExecutorToComponent().get(exec), exec,
                         td.getTaskResourceReqList(exec));
                 scheduleExecutorWithPartitioning(exec, td, schedulerAssignmentMap, scheduledTasks, partition.getValue());
-                SupervisorDetails s = _cluster.getSupervisorById(partition.getValue().getNode().getId());
-
-                System.out.println("");
             }
 
         }
-//        for (ExecutorDetails exec : orderedExecutors) {
-//            LOG.info("\n\nAttempting to schedule: {} of component {}[ REQ {} ]",
-//                    exec, td.getExecutorToComponent().get(exec),
-//                    td.getTaskResourceReqList(exec));
-//            scheduleExecutor(exec, td, schedulerAssignmentMap, scheduledTasks);
-//        }
 
         executorsNotScheduled.removeAll(scheduledTasks);
         LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
@@ -351,7 +350,6 @@ public class myStrategy implements IStrategy {
 
             schedulerAssignmentMap.get(targetSlot).add(exec);
             targetNode.consumeResourcesforTask(exec, td);
-            //_nodes.getNodeById(partition.getNode().getId()).consumeResourcesforTask(exec, td);
             scheduledTasks.add(exec);
             LOG.info("TASK {}:{} assigned to Node: {} on slot: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on Rack: {}", exec, td.getExecutorToComponent().get(exec),
 

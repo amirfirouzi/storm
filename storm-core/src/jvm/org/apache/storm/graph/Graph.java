@@ -277,6 +277,6 @@ public class Graph {
                 }
             }
         }
-        return false;
+        return edgesHasWeigth;
     }
 }
