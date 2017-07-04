@@ -1,6 +1,12 @@
+#OnlineScheduler
 #storm.scheduler: "org.apache.storm.scheduler.adaptive.OnlineScheduler"
+#RAS
+#storm.scheduler: "org.apache.storm.scheduler.resource.ResourceAwareScheduler"
+#topology.scheduler.strategy: "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy"
+#myScheduler
 storm.scheduler: "org.apache.storm.scheduler.resource.myScheduler"
 topology.scheduler.strategy: "org.apache.storm.scheduler.resource.strategies.scheduling.myStrategy"
+
 traffic.improvement: 50
 reschedule.timeout: 20
 nimbus.monitor.freq.secs: 10

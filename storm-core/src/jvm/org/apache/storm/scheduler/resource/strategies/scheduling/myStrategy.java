@@ -182,8 +182,6 @@ public class myStrategy implements IStrategy {
                         schedulerAssignmentMap.get(targetSlot).remove(exec);
                         if (!currentPartitions.get(partition.getId()).getVertices().isEmpty())
                             currentPartitions.get(partition.getId()).getVertices().remove(vertex);
-
-                        //_cluster.getAssignments().get(td.getId()).getExecutorToSlot().remove(exec);
                         //remove assignment record for this slot if it is(becomes) empty
                         LOG.info("Removed: {}:{} from Node: {} Port:{} due to migration, [ RES Freed {} ]",
                                 td.getExecutorToComponent().get(exec), exec,
@@ -191,20 +189,17 @@ public class myStrategy implements IStrategy {
                                 targetSlot.getPort(),
                                 td.getTaskResourceReqList(exec));
                         if (schedulerAssignmentMap.get(targetSlot).size() == 0) {
-//                            schedulerAssignmentMap.remove(targetSlot);
                             LOG.info("Slot:{} port:{} is Empty So Should be Removed", targetSlot.getId(), targetSlot.getPort());
-                            //_cluster.freeSlot(targetSlot);
-
                         }
                         //currentPartitions.get(partition.getId()).getVertices().remove(vertex);
+                    } else {
+                        LOG.info("Not Removed {}:{}: slot({}) != partition-nodeId({}) task will be migrated in future iterations",
+                                td.getExecutorToComponent().get(exec), exec,
+                                targetSlot, partition.getNode().getId());
                     }
-                } else { // it's unassigned executor & should be assigned
-                    LOG.info("Not Removed {}:{}: slot({}) != partition-nodeId({})",
-                            td.getExecutorToComponent().get(exec), exec,
-                            targetSlot, partition.getNode().getId());
+                    if (scheduledTasks.contains(exec))
+                        scheduledTasks.remove(exec);
                 }
-                if (scheduledTasks.contains(exec))
-                    scheduledTasks.remove(exec);
             }
         }
     }
@@ -220,6 +215,7 @@ public class myStrategy implements IStrategy {
      * @param scheduledTasks         executors that have been scheduled
      * @param currentPartitions      the partitions of current Assignment(to effect on toBeRemoved & toBeMigrated Lists)
      */
+
     public void migrateExecutor(Vertex vertex,
                                 TopologyDetails td,
                                 Partition fromPartition,

@@ -47,6 +47,7 @@ public class myScheduler implements IScheduler {
     private Map<String, PartitioningResult> lastPartitioning;
     private long lastRescheduling;
     private Map<String, Graph> topoGraphs;
+    private boolean firstRescheduling;
 
     @SuppressWarnings("rawtypes")
     private Map conf;
@@ -60,6 +61,7 @@ public class myScheduler implements IScheduler {
         if (lastPartitioning == null)
             lastPartitioning = new LinkedHashMap<>();
         topoGraphs = new HashMap<>();
+        firstRescheduling = true;
 
     }
 
@@ -194,21 +196,24 @@ public class myScheduler implements IScheduler {
         PartitioningResult partitioning = Partitioner.doPartition(CostFunction.costMode.Both, true, graph, schedulingState);
         boolean isPartitioningImproved = isPartitioningImproved(td.getId(), partitioning);
         scheduleTopology(td, partitioning, isPartitioningImproved);
-        lastPartitioning.put(td.getId(), partitioning);
+        if (isPartitioningImproved)
+            lastPartitioning.put(td.getId(), partitioning);
     }
 
     public boolean isPartitioningImproved(String td, PartitioningResult newPartitioning) {
         //TODO: now only considers crosscut, ADD loads and other factors too
         int newCut = newPartitioning.getBestCut();
         int lastCut = lastPartitioning.get(td).getBestCut();
-        boolean weightedGraph = newPartitioning.getGraph().doesEdgesHaveWeight();
-        if ((newCut < lastCut) || (!weightedGraph)) {
-            LOG.info("\n****************Partitioning is Improved: lastCut={}, newCut={}, Weighted:{}\n",
-                    lastCut, newCut, weightedGraph);
+        boolean weightedGraph = lastPartitioning.get(td).getGraph().doesEdgesHaveWeight();
+        if ((newCut < lastCut) || (firstRescheduling && weightedGraph)) {
+            LOG.info("\n****************Partitioning is Improved: lastCut={}, newCut={}, firstRescheduling:{}\n",
+                    lastCut, newCut, firstRescheduling);
+            if (firstRescheduling)
+                firstRescheduling = false;
             return true;
         } else {
-            LOG.info("\n****************Partitioning is NOT Improved: lastCut={}, newCut={}, Weighted:{}\n",
-                    lastCut, newCut, weightedGraph);
+            LOG.info("\n****************Partitioning is NOT Improved: lastCut={}, newCut={}, firstRescheduling:{}\n",
+                    lastCut, newCut, firstRescheduling);
             return false;
         }
 
@@ -354,7 +359,6 @@ public class myScheduler implements IScheduler {
             //initialize newAssignmentExecutorToWorker a Map of Execs to Workers of new Assignment
             // and remove Null Slots from assignment
             List<WorkerSlot> nullAssignments = new ArrayList<>();
-
             Map<ExecutorDetails, WorkerSlot> newAssignmentExecutorToWorker = new LinkedHashMap<>();
             for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> wsExecs :
                     schedulerAssignmentMap.entrySet()) {
@@ -397,6 +401,8 @@ public class myScheduler implements IScheduler {
                         clusterSchedulingState.get(td.getId()).getExecutorToSlot().remove(clusterExecutor, clusterWorker);
                     }
                 }
+                LOG.info(SchedulingUtils.assignmentToString(clusterSlotToExecutors, "Cluster Assignments(After)"));
+                LOG.info(SchedulingUtils.assignmentToString(schedulerAssignmentMap, "New Assignments(Before)"));
 
                 for (WorkerSlot worker :
                         nullAssignments) {
@@ -406,10 +412,9 @@ public class myScheduler implements IScheduler {
                         clusterSlotToExecutors.keySet()) {
                     schedulerAssignmentMap.remove(worker);
                 }
-                LOG.info(SchedulingUtils.assignmentToString(clusterSlotToExecutors, "Cluster Assignments(After)"));
             }
 
-            LOG.info(SchedulingUtils.assignmentToString(schedulerAssignmentMap, "New Assignments"));
+            LOG.info(SchedulingUtils.assignmentToString(schedulerAssignmentMap, "New Assignments(After)"));
             //endregion
 
             Set<String> nodesUsed = new HashSet<String>();
