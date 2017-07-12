@@ -1,0 +1,13 @@
+Script started on ‫چهارشنبه ۱۲ ژوئیه ۱۷، ۱۷:۱۹:۵۳‬
+]0;amir@CCLAB-PC: ~/Projects/storm/mystorm/stormamir@CCLAB-PC:~/Projects/storm/mystorm/storm$ ssh stormmasters[K[K[K[K[K[K[K[K[K[K[K[K[K[K[K[K^C
+]0;amir@CCLAB-PC: ~/Projects/storm/mystorm/stormamir@CCLAB-PC:~/Projects/storm/mystorm/storm$ exirt[K[Kr
+No command 'exir' found, did you mean:
+ Command 'expr' from package 'coreutils' (main)
+ Command 'exim' from package 'exim4-daemon-heavy' (main)
+ Command 'exim' from package 'exim4-daemon-light' (main)
+ Command 'exif' from package 'exif' (universe)
+exir: command not found
+]0;amir@CCLAB-PC: ~/Projects/storm/mystorm/stormamir@CCLAB-PC:~/Projects/storm/mystorm/storm$ exir[Kr[Kt
+exit
+
+Script done on ‫چهارشنبه ۱۲ ژوئیه ۱۷، ۱۷:۲۰:۰۴‬
