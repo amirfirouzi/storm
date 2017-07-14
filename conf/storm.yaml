@@ -11,13 +11,3 @@ traffic.improvement: 50
 reschedule.timeout: 20
 nimbus.monitor.freq.secs: 10
 supervisor.memory.capacity.mb: 4000
-
-#Adaptive Scheduler Configs
-jdbc.driver: "com.mysql.jdbc.Driver"
-data.connection.uri: "jdbc:mysql://localhost/stormscheduler?user=stormuser&password=123456"
-validation.query: "SELECT"
-node-name: "amir-pc"
-reschedule.timeout: 10
-capacity: 80
-time.window.slot.count: 50
-time.window.slot.length: 50

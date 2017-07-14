@@ -1,0 +1,71 @@
+########### These MUST be filled in for a storm configuration
+#OnlineScheduler
+#storm.scheduler: "org.apache.storm.scheduler.adaptive.OnlineScheduler"
+#RAS
+#storm.scheduler: "org.apache.storm.scheduler.resource.ResourceAwareScheduler"
+#topology.scheduler.strategy: "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy"
+#myScheduler
+storm.scheduler: "org.apache.storm.scheduler.resource.myScheduler"
+topology.scheduler.strategy: "org.apache.storm.scheduler.resource.strategies.scheduling.myStrategy"
+
+storm.local.dir: "/home/storm/storm-data/storm-2/supervisor-data"
+
+storm.zookeeper.servers:
+    - "stormzookeeper"
+    
+traffic.improvement: 50
+reschedule.timeout: 20
+nimbus.monitor.freq.secs: 10
+
+# Configs for CGroup support
+storm.cgroup.enable: "false"
+storm.cgroup.hierarchy.dir: "/cgroup/storm_resources"
+storm.cgroup.resources:
+    - "cpu"
+    - "memory"
+storm.cgroup.hierarchy.name: "storm"
+storm.supervisor.cgroup.rootdir: "storm"
+storm.cgroup.cgexec.cmd: "/bin/cgexec"
+
+nimbus.seeds: ["stormmaster"]
+nimbus.childopts: "-Xmx1024m -Djava.net.preferIPv4Stack=true"
+
+supervisor.childopts: "-Djava.net.preferIPv4Stack=true"
+worker.childopts: "-Xmx768m -Djava.net.preferIPv4Stack=true"
+
+supervisor.memory.capacity.mb: 4096.0
+supervisor.cpu.capacity: 400.0
+supervisor.slots.ports:
+    - 2140
+    - 2141
+    - 2142
+    - 2143
+
+ui.port: 8080
+# 
+
+# 
+# ##### These may optionally be filled in:
+#    
+## List of custom serializations
+# topology.kryo.register:
+#     - org.mycompany.MyType
+#     - org.mycompany.MyType2: org.mycompany.MyType2Serializer
+#
+## List of custom kryo decorators
+# topology.kryo.decorators:
+#     - org.mycompany.MyDecorator
+#
+## Locations of the drpc servers
+# drpc.servers:
+#     - "server1"
+#     - "server2"
+
+## Metrics Consumers
+# topology.metrics.consumer.register:
+#   - class: "org.apache.storm.metric.LoggingMetricsConsumer"
+#     parallelism.hint: 1
+#   - class: "org.mycompany.MyMetricsConsumer"
+#     parallelism.hint: 1
+#     argument:
+#       - endpoint: "metrics-collector.mycompany.org"
