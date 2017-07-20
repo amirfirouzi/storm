@@ -40,7 +40,7 @@
     <profile>
         <id>intellij</id>
         <properties>
-            <provided.scope>compile</provided.scope>
+            <provided.scope>provided</provided.scope>
         </properties>
     </profile>
   </profiles>
@@ -161,6 +161,12 @@
     </resources>
 
     <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>2.6</version>
+        </plugin>
+
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>

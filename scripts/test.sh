@@ -1,9 +1,3 @@
-DIR="$1"
-user="storm"
-host="stormmaster"
-if (ssh "$user@$host" "[ -d $DIR ]")
-then
-    echo "$DIR directory  exists!"
-else
-    echo "$DIR directory not found!"
-fi
+ #! /bin/zsh
+nodes=( stormmaster stormslave1 stormslave2 stormslave3 stormslave4 stormslave5 stormslave6 )
+echo $nodes[1]

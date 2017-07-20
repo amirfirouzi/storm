@@ -49,7 +49,7 @@ public class DataManager {
 			// load configuration from file
 			logger.debug("Loading configuration from file");
 			Properties properties = new Properties();
-			properties.load(new FileInputStream("conf/db.ini"));
+			properties.load(new FileInputStream("/home/storm/storm-current/db.ini"));
 			logger.debug("Configuration loaded");
 			
 			// load JDBC driver
