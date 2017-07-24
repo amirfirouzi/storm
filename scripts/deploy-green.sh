@@ -102,12 +102,12 @@ echo "removing storm.yaml and db.ini form core.jar"
 zip -d $corepkg storm.yaml
 zip -d $corepkg db.ini
 
-if [ topo_option != 0 ]; then
+if [ $topo_option != 0 ]; then
     echo "removing storm.yaml and db.ini from storm-starter.jar"
     zip -d $topopkg storm.yaml
     zip -d $topopkg db.ini
     echo "copying topology package to ~/packages of master node: " $masternode
-    scp "$topopkg" "$user@$masternode:$backupdir/"
+    scp "$topopkg" "$user@$masternode:~/packages/"
 fi
 
 for i in $nodes
