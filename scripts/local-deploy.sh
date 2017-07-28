@@ -59,6 +59,7 @@ new_compilation(){
     if [ $topo_option = 1 ]; then
         log "removing storm.yaml and db.ini from storm-starter.jar"
         zip -d $topopkg storm.yaml
+        zip -d $topopkg defaults.yaml
         zip -d $topopkg db.ini
     fi
     echo "==========New Compilation, New Extraction==========\n"
@@ -116,6 +117,14 @@ if [ $compile_option = 1 ] || [ $topo_option = 1 ]; then
     new_compilation
 fi
 echo "==========Deploy Storm to Remote=========="
+#mkdir for remotestormhome directory
+if (ssh "$user@$host" "[ -d $remotestormhome ]") then
+    echo "$remotestormhome directory  exists, no need to mkdir"
+else
+    echo "$remotestormhome directory not found! creating..."
+    sshcommand $user $host "mkdir $remotestormhome"
+    echo "$remotestormhome directory created on $host"
+fi
 log "cleaning green storm home directory: $remotestormhome/*"
 sshcommand $user $host "rm -rf $remotestormhome/*"
 if [ $full_option = 1 ]; then
