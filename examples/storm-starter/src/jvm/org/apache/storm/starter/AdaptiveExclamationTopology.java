@@ -140,14 +140,14 @@ public class AdaptiveExclamationTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout("a", new TestWordSpoutAdaptive(), 1)
+        builder.setSpout("a", new TestWordSpoutAdaptive(), 2)
                 .setMemoryLoad(150)
-                .setCPULoad(100);
+                .setCPULoad(70);
 //    builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"));
-        builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"))
+        builder.setBolt("b", new ExclamationBolt(), 3).fieldsGrouping("a", new Fields("word"))
                 .setMemoryLoad(200)
                 .setCPULoad(80);
-        builder.setBolt("c", new ExclamationBolt(), 2).allGrouping("b")
+        builder.setBolt("c", new ExclamationBolt(), 3).allGrouping("b")
                 .setMemoryLoad(250)
                 .setCPULoad(100);
 //        builder.setBolt("d", new ExclamationBolt(), 2).allGrouping("c")

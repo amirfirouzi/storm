@@ -1,15 +1,16 @@
  #! /bin/zsh
 
-host='fgreen'
-user='storm'
+host='green'
+user='green'
 password='123'
 stormhome='/home/amir/Projects/storm/mystorm/storm'
 stormstarter='examples/storm-starter'
-fgreen='/home/storm/storm'
-#remotestormhome='/home/green/vmware/storm-cluster-green-current/storm'
-remotestormhome=$fgreen
-version='2.0.0-SNAPSHOT'
+#fgreen='/home/storm/storm'
+remotestormhome='/home/green/vmware/storm-cluster-green-current/storm'
+#remotestormhome=$fgreen
+remotedeployscriptname='remote-deploy.sh'
 
+version='2.0.0-SNAPSHOT'
 stormpkgdir="$stormhome/storm-dist/binary/final-package/target"
 stormpkgname="apache-storm-$version"
 stormpkgnamezip="$stormpkgname.tar.gz"
@@ -106,11 +107,11 @@ echo "==========Script Options==========\n"
 
 if [ $compile_option = 1 ] || [ $topo_option = 1 ]; then
     echo "==========Compiling Storm=========="
-#    mvn clean install -DskipTests=true
+    mvn clean install -DskipTests=true
     check_failure "compiling"
 
     log "packaging storm"
-#    cd storm-dist/binary && mvn package && cd ../..
+    cd storm-dist/binary && mvn package && cd ../..
     check_failure "packaging binaries"
     echo "==========Compiling Storm==========\n"
 
@@ -140,9 +141,6 @@ if [ $full_option = 0 ] && [ $topo_option = 1 ]; then
     sshcommand $user $host "bash -c 'chmod +x $remotestormhome/$topopkgname.jar;'"
 fi
 
-remotedeployscriptname='remote-deploy.sh'
-remotedeployscriptfile="$remotestormhome/$remotedeployscriptname"
-
 currentdir=$PWD
 cd scripts
 log "compress config files into zip file"
@@ -155,6 +153,4 @@ log "send $remotedeployscriptname to Remote Server"
 scp "$remotedeployscriptname" "$user@$host:$remotestormhome/"
 cd "../"
 echo "==========Deploy Storm to Remote=========="
-echo "================ ****** ==================\n\n"
-
-ssh -t "$user@$host" "bash -c 'chmod +x $remotedeployscriptfile; $remotedeployscriptfile $options;'"
+echo "================ ****** =================="

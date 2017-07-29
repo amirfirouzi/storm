@@ -1,8 +1,5 @@
  #! /bin/bash
 
-echo "================ ****** ==================="
-echo "==========Remote Server Deploying=========="
-
 options=$@
 full_option=0
 partial_option=0
@@ -14,9 +11,9 @@ password='123'
 masternode='stormmaster'
 nodes='stormmaster stormslave1 stormslave2 stormslave3 stormslave4 stormslave5 stormslave6'
 stormdir="/home/$user/storm-current"
-fgreen='/home/storm/storm'
-#remotestormhome='/home/green/vmware/storm-cluster-green-current/storm'
-remotestormhome=$fgreen
+#fgreen='/home/storm/storm'
+remotestormhome='/home/green/vmware/storm-cluster-green-current/storm'
+#remotestormhome=$fgreen
 nodehomedir="/home/$user"
 version='2.0.0-SNAPSHOT'
 
@@ -149,7 +146,7 @@ do
              echo starting supervisord daemons;
              supervisorctl start all;'"
         fi
-        if [ $topo_option = 1 ] && [ $full_option = 0 ]; then
+        if [ $topo_option = 1 ] && [ $full_option = 0 ] && [ $i = "stormmaster" ]; then
             log "topology Deployment needed. replacing the storm-starter-topologies.jar"
 #            send_config_files
 

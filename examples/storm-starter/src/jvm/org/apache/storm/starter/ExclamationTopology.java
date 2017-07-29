@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,50 +39,55 @@ import java.util.Map;
  */
 public class ExclamationTopology {
 
-  public static class ExclamationBolt extends BaseRichBolt {
-    OutputCollector _collector;
+    public static class ExclamationBolt extends BaseRichBolt {
+        OutputCollector _collector;
 
-    @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
-      _collector = collector;
+        @Override
+        public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+            _collector = collector;
+        }
+
+        @Override
+        public void execute(Tuple tuple) {
+            _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
+            _collector.ack(tuple);
+        }
+
+        @Override
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+            declarer.declare(new Fields("word"));
+        }
+
+
     }
 
-    @Override
-    public void execute(Tuple tuple) {
-      _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
-      _collector.ack(tuple);
-    }
+    public static void main(String[] args) throws Exception {
+        TopologyBuilder builder = new TopologyBuilder();
 
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
-      declarer.declare(new Fields("word"));
-    }
+        builder.setSpout("a", new TestWordSpout(), 2)
+                .setMemoryLoad(150)
+                .setCPULoad(70);
+        builder.setBolt("b", new ExclamationBolt(), 3).fieldsGrouping("a", new Fields("word"))
+                .setMemoryLoad(200)
+                .setCPULoad(80);
+        builder.setBolt("c", new ExclamationBolt(), 3).allGrouping("b")
+                .setMemoryLoad(250)
+                .setCPULoad(100);
 
-
-  }
-
-  public static void main(String[] args) throws Exception {
-    TopologyBuilder builder = new TopologyBuilder();
-
-    builder.setSpout("a", new TestWordSpout(), 5);
-    builder.setBolt("b", new ExclamationBolt(), 2).shuffleGrouping("a");
-    builder.setBolt("c", new ExclamationBolt(), 3).shuffleGrouping("b");
-
-    Config conf = new Config();
-    conf.setDebug(true);
+        Config conf = new Config();
+        conf.setDebug(true);
 //    conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.myStrategy.class);
 
-    if (args != null && args.length > 0) {
-      conf.setNumWorkers(3);
+        if (args != null && args.length > 0) {
+            conf.setNumWorkers(2);
 
-      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
-    }
-    else {
+            StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
+        } else {
 
-      try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("exclamation-topology", conf, builder.createTopology());) {
-        Utils.sleep(100000);
-      }
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("exclamation-topology", conf, builder.createTopology());) {
+                Utils.sleep(100000);
+            }
+        }
     }
-  }
 }
