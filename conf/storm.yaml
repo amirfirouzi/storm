@@ -11,3 +11,13 @@ traffic.improvement: 50
 reschedule.timeout: 20
 nimbus.monitor.freq.secs: 10
 supervisor.memory.capacity.mb: 4000
+
+################# db information #################
+jdbc.driver: "com.mysql.jdbc.Driver"
+data.connection.uri: "jdbc:mysql://localhost/stormscheduler?user=stormuser&password=123456"
+validation.query: "SELECT"
+node-name: "CCLAB-PC"
+capacity: 100
+time.window.slot.count: 10
+time.window.slot.length: 5
+

@@ -44,9 +44,9 @@ public class TestWordCounter extends BaseBasicBolt {
         _counts = new HashMap<String, Integer>();
         //region monitoring
         // register this spout instance (task) to the java process monitor
-        WorkerMonitor.getInstance().setContextInfo(context);
+        WorkerMonitor.getInstance(stormConf).setContextInfo(context);
         // create the object for notifying relevant events (received tuple, which in turn notifies thread ID)
-        taskMonitor = new TaskMonitor(context.getThisTaskId());
+        taskMonitor = new TaskMonitor(context.getThisTaskId(),stormConf);
         //endregion monitoring
     }
 

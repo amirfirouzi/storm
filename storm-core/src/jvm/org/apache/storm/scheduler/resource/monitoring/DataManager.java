@@ -39,7 +39,7 @@ public class DataManager {
 	private int capacity; // the capacity of a node, expressed in percentage wrt the total speed
 	private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
-	private DataManager() {
+	private DataManager(Map conf) {
 		logger = Logger.getLogger(DataManager.class);
 		logger.info("Starting DataManager (working directory: " + System.getProperty("user.dir") + ")");
     ClassLoader cl = ClassLoader.getSystemClassLoader();
@@ -47,21 +47,21 @@ public class DataManager {
     URL[] urls = ((URLClassLoader)cl).getURLs();
 		try {
 			// load configuration from file
-			logger.debug("Loading configuration from file");
-			Properties properties = new Properties();
-			properties.load(new FileInputStream("/home/storm/storm-current/db.ini"));
-			logger.debug("Configuration loaded");
+//			logger.debug("Loading configuration from file");
+//			Properties properties = new Properties();
+//			properties.load(new FileInputStream("/home/storm/storm-current/db.ini"));
+//			logger.debug("Configuration loaded");
 			
 			// load JDBC driver
 			logger.debug("Loading JDBC driver");
-			String jdbc_driver = properties.getProperty("jdbc.driver").trim();
+			String jdbc_driver = ((String)conf.get("jdbc.driver")).trim();
 			Class.forName(jdbc_driver);
 			logger.debug("Driver loaded");
 			
 			// set up data source
 			logger.debug("Setting up pooling data source");
-			String connection_uri = properties.getProperty("data.connection.uri");
-			String validation_query = properties.getProperty("validation.query");
+			String connection_uri = (String)conf.get("data.connection.uri");
+			String validation_query = (String)conf.get("validation.query");
 			ObjectPool connectionPool = new GenericObjectPool(null);
 			ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connection_uri, null);
 			PoolableConnectionFactory poolableConnectionFactory = 
@@ -70,9 +70,9 @@ public class DataManager {
 			dataSource = new PoolingDataSource(connectionPool);
 			logger.debug("Data source set up");
 			
-			nodeName = properties.getProperty("node-name");
-			if (properties.getProperty("capacity") != null) {
-				capacity = Integer.parseInt(properties.getProperty("capacity"));
+			nodeName = (String)conf.get("node-name");
+			if (conf.get("capacity") != null) {
+				capacity = (Integer) conf.get("capacity");
 				if (capacity < 1 || capacity > 100)
 					throw new RuntimeException("Wrong capacity: " + capacity + ", expected in the range [1, 100]");
 			}
@@ -83,9 +83,9 @@ public class DataManager {
 		}
 	}
 	
-	public static synchronized DataManager getInstance() {
+	public static synchronized DataManager getInstance(Map conf) {
 		if (instance == null)
-			instance = new DataManager();
+			instance = new DataManager(conf);
 		return instance;
 	}
 	

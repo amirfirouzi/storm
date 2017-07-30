@@ -113,7 +113,7 @@ public class myScheduler implements IScheduler {
     private void chooseSchedulingPlan(Topologies topologies, Cluster cluster) {
         List<String> dbTopologies = null;
         try {
-            dbTopologies = DataManager.getInstance().getTopologies();
+            dbTopologies = DataManager.getInstance(conf).getTopologies();
         } catch (Exception e) {
             dbTopologies = new ArrayList<>();
             e.printStackTrace();
@@ -143,7 +143,7 @@ public class myScheduler implements IScheduler {
         // remove topologies from DB
         if (!topologiesToBeRemoved.isEmpty()) {
             try {
-                DataManager.getInstance().removeTopologies(topologiesToBeRemoved);
+                DataManager.getInstance(conf).removeTopologies(topologiesToBeRemoved);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -180,7 +180,7 @@ public class myScheduler implements IScheduler {
         LOG.info("Generated Graph:\n {}", graph);
         List<ExecutorPair> traffic = new ArrayList<>();
         try {
-            traffic = DataManager.getInstance().getInterExecutorTrafficList(td.getId());
+            traffic = DataManager.getInstance(conf).getInterExecutorTrafficList(td.getId());
         } catch (Exception e) {
             e.printStackTrace();
         }

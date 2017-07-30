@@ -10,20 +10,22 @@
 *******************************************************************************/
 package org.apache.storm.scheduler.resource.monitoring;
 
+import java.util.Map;
+
 public class WorkerMonitorThread extends Thread {
 	
-	public void run() {
+	public void run(Map conf) {
 		
 		while (true) {
 			try {
-				Thread.sleep(MonitorConfiguration.getInstance().getTimeWindowSlotLength() * 1000);
+				Thread.sleep(MonitorConfiguration.getInstance(conf).getTimeWindowSlotLength() * 1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 
 			try {
-				WorkerMonitor.getInstance().sampleStats();
-				WorkerMonitor.getInstance().storeStats();
+				WorkerMonitor.getInstance(conf).sampleStats();
+				WorkerMonitor.getInstance(conf).storeStats();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -54,9 +54,9 @@ public class TestWordSpout extends BaseRichSpout {
         _collector = collector;
         //region monitoring
         //register this spout instance (task) to the java process monitor
-        WorkerMonitor.getInstance().setContextInfo(context);
+        WorkerMonitor.getInstance(conf).setContextInfo(context);
         //create the object required to notify relevant events (also notify thread ID)
-        taskMonitor = new TaskMonitor(context.getThisTaskId());
+        taskMonitor = new TaskMonitor(context.getThisTaskId(),conf);
         //endregion
     }
     

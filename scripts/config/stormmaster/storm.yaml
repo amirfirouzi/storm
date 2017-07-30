@@ -34,6 +34,16 @@ supervisor.childopts: "-Djava.net.preferIPv4Stack=true"
 worker.childopts: "-Xmx768m -Djava.net.preferIPv4Stack=true"
 
 ui.port: 8080
+
+################# db information #################
+jdbc.driver: "com.mysql.jdbc.Driver"
+data.connection.uri: "jdbc:mysql://stormmaster/stormscheduler?user=stormuser&password=123456"
+validation.query: "SELECT"
+node-name: "stormmaster"
+capacity: 100
+time.window.slot.count: 10
+time.window.slot.length: 5
+
 # 
 # ##### These may optionally be filled in:
 #    

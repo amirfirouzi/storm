@@ -40,7 +40,7 @@
     <profile>
         <id>intellij</id>
         <properties>
-            <provided.scope>provided</provided.scope>
+            <provided.scope>compile</provided.scope>
         </properties>
     </profile>
   </profiles>
@@ -95,8 +95,9 @@
       <!--
         Use "provided" scope to keep storm out of the jar-with-dependencies
         For IntelliJ dev, intellij will load properly.
-      -->
+
         <scope>${provided.scope}</scope>
+        -->
     </dependency>
       <dependency>
           <groupId>org.apache.storm</groupId>

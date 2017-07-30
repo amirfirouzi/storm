@@ -53,15 +53,13 @@ new_compilation(){
     log "extracting new compiled storm tar.gz to local"
     cd $stormhome
     tar xzf $stormpkg -C $stormpkgdir/
-    log "removing storm.yaml and db.ini form core.jar"
+    log "removing storm.yaml form core.jar"
     zip -d $corepkg storm.yaml
-    zip -d $corepkg db.ini
 
     if [ $topo_option = 1 ]; then
-        log "removing storm.yaml and db.ini from storm-starter.jar"
+        log "removing storm.yaml and defaults.yaml from storm-starter.jar"
         zip -d $topopkg storm.yaml
         zip -d $topopkg defaults.yaml
-        zip -d $topopkg db.ini
     fi
     echo "==========New Compilation, New Extraction==========\n"
 }

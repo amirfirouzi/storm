@@ -18,7 +18,7 @@ import java.util.Map;
 public class TaskMonitor {
 	
 	private final int taskId;
-	
+	private Map conf;
 	private long threadId;
 	
 	/**
@@ -35,17 +35,18 @@ public class TaskMonitor {
 	
 	private Map<Integer, Integer> trafficStatToReturn;
 	
-	public TaskMonitor(int taskId) {
+	public TaskMonitor(int taskId, Map conf) {
+	    this.conf=conf;
 		this.taskId = taskId;
 		threadId = -1;
-		slotLength = MonitorConfiguration.getInstance().getTimeWindowSlotLength() * 1000;
+		slotLength = MonitorConfiguration.getInstance(conf).getTimeWindowSlotLength() * 1000;
 		trafficStatMap = new HashMap<Integer, Integer>();
 	}
 	
 	public void checkThreadId() {
 		if (threadId == -1) {
 			threadId = Thread.currentThread().getId();
-			WorkerMonitor.getInstance().registerTask(this);
+			WorkerMonitor.getInstance(conf).registerTask(this);
 		}
 	}
 

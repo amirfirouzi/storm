@@ -88,7 +88,6 @@ done
 send_config_files(){
     log "send config files to $i"
     scp "$configdir/$i/storm.yaml" "$user@$i:$nodehomedir/packages/"
-    scp "$configdir/$i/db.ini" "$user@$i:$nodehomedir/packages/"
 }
 
 for i in $nodes
@@ -110,15 +109,12 @@ do
              tar xzf $nodehomedir/packages/$stormpkgnamezip --strip 1 -C $stormdir/;
              echo removing config files from storm package:$corename;
              zip -d $stormdir/lib/$corename storm.yaml;
-             zip -d $stormdir/lib/$corename db.ini;
              echo removing config files from storm package:$topopkgname;
              zip -d $stormdir/$stormstarter/$topopkgname.jar storm.yaml;
              zip -d $stormdir/$stormstarter/$topopkgname.jar defaults.yaml;
-             zip -d $stormdir/$stormstarter/$topopkgname.jar db.ini;
              rm $nodehomedir/packages/$stormpkgnamezip;
              echo copy config files to $stormdir/config;
              cp $nodehomedir/packages/storm.yaml $stormdir/conf/;
-             cp $nodehomedir/packages/db.ini $stormdir/;
              chown -R $user:$user $stormdir/*;
              chmod -R 775 $stormdir/*;
              echo starting supervisord daemons;
@@ -140,7 +136,6 @@ do
              rm $nodehomedir/packages/$corename;
              echo copying config files to $stormdir/config;
              cp $nodehomedir/packages/storm.yaml $stormdir/conf/;
-             cp $nodehomedir/packages/db.ini $stormdir/;
              chown -R $user:$user $stormdir/*;
              chmod -R 775 $stormdir/*;
              echo starting supervisord daemons;
