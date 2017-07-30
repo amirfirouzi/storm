@@ -37,7 +37,7 @@ import java.util.Map;
 /**
  * This is a basic example of a Storm topology.
  */
-public class ExclamationTopology {
+public class ExclamationTopologyRes {
 
     public static class ExclamationBolt extends BaseRichBolt {
         OutputCollector _collector;
@@ -64,9 +64,15 @@ public class ExclamationTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout("a", new TestWordSpout(), 2);
-        builder.setBolt("b", new ExclamationBolt(), 3).fieldsGrouping("a", new Fields("word"));
-        builder.setBolt("c", new ExclamationBolt(), 3).allGrouping("b");
+        builder.setSpout("a", new TestWordSpout(), 2)
+                .setMemoryLoad(150)
+                .setCPULoad(70);
+        builder.setBolt("b", new ExclamationBolt(), 3).fieldsGrouping("a", new Fields("word"))
+                .setMemoryLoad(200)
+                .setCPULoad(80);
+        builder.setBolt("c", new ExclamationBolt(), 3).allGrouping("b")
+                .setMemoryLoad(250)
+                .setCPULoad(100);
 
         Config conf = new Config();
         conf.setDebug(true);

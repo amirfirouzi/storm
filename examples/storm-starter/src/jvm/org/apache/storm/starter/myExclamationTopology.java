@@ -44,7 +44,7 @@ import java.util.Random;
 /**
  * This is a basic example of a Storm topology.
  */
-public class AdaptiveExclamationTopology {
+public class myExclamationTopology {
 
     public static class TestWordSpoutAdaptive extends BaseRichSpout {
         public static Logger LOG = LoggerFactory.getLogger(org.apache.storm.testing.TestWordSpout.class);
