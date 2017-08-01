@@ -180,12 +180,14 @@ public class myScheduler implements IScheduler {
         LOG.info("Generated Graph:\n {}", graph);
         List<ExecutorPair> traffic = new ArrayList<>();
         try {
+            LOG.info("Getting Traffic List from db:\n {}", graph);
             traffic = DataManager.getInstance(conf).getInterExecutorTrafficList(td.getId());
         } catch (Exception e) {
             e.printStackTrace();
         }
         for (ExecutorPair exec :
                 traffic) {
+            //LOG.info("traffic: {}", exec);
             String from = exec.getSource().getFullExecutorName();
             String to = exec.getDestination().getFullExecutorName();
             int trafficValue = exec.getTraffic();

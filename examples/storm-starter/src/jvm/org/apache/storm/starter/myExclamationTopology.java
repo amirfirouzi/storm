@@ -144,7 +144,7 @@ public class myExclamationTopology {
                 .setMemoryLoad(150)
                 .setCPULoad(70);
 //    builder.setBolt("b", new ExclamationBolt(), 2).fieldsGrouping("a", new Fields("word"));
-        builder.setBolt("b", new ExclamationBolt(), 3).fieldsGrouping("a", new Fields("word"))
+        builder.setBolt("b", new ExclamationBolt(), 5).fieldsGrouping("a", new Fields("word"))
                 .setMemoryLoad(200)
                 .setCPULoad(80);
         builder.setBolt("c", new ExclamationBolt(), 3).allGrouping("b")
@@ -159,7 +159,7 @@ public class myExclamationTopology {
 
         Config conf = new Config();
         conf.setDebug(true);
-        conf.setNumWorkers(2);
+        conf.setNumWorkers(3);
         //conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.myResourceAwareStrategy.class);
 
         if (args != null && args.length > 0) {

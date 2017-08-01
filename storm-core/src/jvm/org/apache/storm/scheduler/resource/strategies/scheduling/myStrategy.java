@@ -164,30 +164,33 @@ public class myStrategy implements IStrategy {
                                Collection<ExecutorDetails> scheduledTasks,
                                Map<Integer, Partition> currentPartitions) {
         LOG.info(SchedulingUtils.verticesToString(currentPartitions.get(partition.getId()).getVertices(), "list of Vertices"));
-        LOG.info("\nthe Vertex: {}\n", vertex.toString());
+        LOG.info("the Vertex: {}\n", vertex.toString());
         if (SchedulingUtils.listContains(currentPartitions.get(partition.getId()).getVertices(), vertex.toString())) {
             ExecutorDetails exec = vertex.getExecutor();
             if (_cluster.getAssignments() != null) {
                 WorkerSlot targetSlot = executorToWorkerSlotMap.get(exec);
                 if (targetSlot != null && schedulerAssignmentMap.containsKey(targetSlot)) {
-                    LOG.info("Attempting to remove: {}:{}  from Node: {} Port:{} due to migration, [ REQ {} ]",
+                    LOG.info("Attempting to remove: {}:{}  from Node: {} Port:{} due to migration, REQ:[ CPU:{}, MEM:{} ]",
                             td.getExecutorToComponent().get(exec), exec,
                             targetSlot.getNodeId(),
                             targetSlot.getPort(),
-                            td.getTaskResourceReqList(exec));
+                            td.getTotalCpuReqTask(exec), td.getTotalMemReqTask(exec));
 //                _nodes.getNodeById(partition.getNode().getId()).freeResourcesForTask(exec, td);
                     if (targetSlot.getNodeId().equals(partition.getNode().getId())) {
                         partition.getNode().freeResourcesForTask(exec, td);
+                        _nodes.getNodeById(partition.getNode().getId()).freeResourcesForTask(exec, td);
                         //otherwise: exec already has been migrated
                         schedulerAssignmentMap.get(targetSlot).remove(exec);
                         if (!currentPartitions.get(partition.getId()).getVertices().isEmpty())
                             currentPartitions.get(partition.getId()).getVertices().remove(vertex);
                         //remove assignment record for this slot if it is(becomes) empty
-                        LOG.info("Removed: {}:{} from Node: {} Port:{} due to migration, [ RES Freed {} ]",
+                        LOG.info("Removed: {}:{} from Node: {} Port:{} due to migration, RES Freed[ CPU:{}, MEM:{} ]",
                                 td.getExecutorToComponent().get(exec), exec,
                                 targetSlot.getNodeId(),
                                 targetSlot.getPort(),
-                                td.getTaskResourceReqList(exec));
+                                td.getTotalCpuReqTask(exec), td.getTotalMemReqTask(exec));
+                        LOG.info("NodeAfterRemovingTask(PartitionNode):{}", partition.getNode());
+                        LOG.info("NodeAfterRemovingTask(PartitionNode):{}", _nodes.getNodeById(partition.getNode().getId()));
                         if (schedulerAssignmentMap.get(targetSlot).size() == 0) {
                             LOG.info("Slot:{} port:{} is Empty So Should be Removed", targetSlot.getId(), targetSlot.getPort());
                         }

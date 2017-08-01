@@ -58,6 +58,10 @@ public class WorkerMonitor {
         return instance;
     }
 
+    public synchronized static WorkerMonitor getInstance(){
+        return instance;
+    }
+
 	/*public synchronized void notifyTupleSentToAcker(int sourceTaskId) {
         Integer traffic = ackerTrafficMap.get(sourceTaskId);
 		if (traffic == null)

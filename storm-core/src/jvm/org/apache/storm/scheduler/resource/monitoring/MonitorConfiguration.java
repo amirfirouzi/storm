@@ -30,13 +30,13 @@ public class MonitorConfiguration {
         try {
             // load configuration from file
             logger.debug("Loading configuration from file");
-            Properties properties = new Properties();
+//            Properties properties = new Properties();
 //      properties.load(new FileInputStream("/home/storm/storm-current/db.ini"));
 //      logger.debug("Configuration loaded");
 
 //			timeWindowSlotCount = Integer.parseInt(properties.getProperty("time.window.slot.count"));
             timeWindowSlotCount = Integer.parseInt(conf.get("time.window.slot.count").toString());
-            timeWindowSlotCount = Integer.parseInt(conf.get("time.window.slot.length").toString());
+            timeWindowSlotLength = Integer.parseInt(conf.get("time.window.slot.length").toString());
 //            timeWindowSlotLength = Integer.parseInt(properties.getProperty("time.window.slot.length"));
         } catch (Exception e) {
             logger.error("Error loading MonitorConfiguration configuration from file", e);
@@ -46,6 +46,10 @@ public class MonitorConfiguration {
     public synchronized static MonitorConfiguration getInstance(Map conf) {
         if (instance == null)
             instance = new MonitorConfiguration(conf);
+        return instance;
+    }
+
+    public synchronized static MonitorConfiguration getInstance(){
         return instance;
     }
 
